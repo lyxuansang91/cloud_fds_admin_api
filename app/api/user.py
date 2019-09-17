@@ -2,7 +2,7 @@ from flask_jwt_extended import create_access_token
 from flask_restplus import Namespace, Resource
 
 from app.errors.exceptions import BadRequest
-from app.extensions import flask_bcrypt, mongo
+from app.extensions import flask_bcrypt
 from app.repositories.user import user_repo
 
 from ..utils import consumes, use_args
