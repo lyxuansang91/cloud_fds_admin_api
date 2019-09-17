@@ -6,14 +6,13 @@ from flask import Flask
 from werkzeug.exceptions import default_exceptions
 
 from .errors.handler import api_error_handler
-from .extensions import JSONEncoder, flask_bcrypt, jwt_manager, ma, mongo
+from .extensions import flask_bcrypt, jwt_manager, ma, mongo
 
 
 def create_app(config_cls):
     app = Flask(__name__)
     app.config.from_object(config_cls)
     __init_app(app)
-    app.json_encoder = JSONEncoder
     __register_blueprint(app)
     __config_logging(app)
     __config_error_handlers(app)

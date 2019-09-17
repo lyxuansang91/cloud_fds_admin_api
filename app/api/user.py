@@ -5,14 +5,13 @@ from app.errors.exceptions import BadRequest
 from app.extensions import flask_bcrypt
 from app.repositories.user import user_repo
 
-from ..utils import consumes, use_args
+from ..utils import consumes, use_args, to_json
 
 ns = Namespace(name="users", description="Users related operation")
 
 
 @ns.route('')
 class APIUserRegister(Resource):
-    @consumes('application/json')
     @use_args(**{
         'type': 'object',
         'properties': {
@@ -27,10 +26,12 @@ class APIUserRegister(Resource):
     def post(self, args):
         ''' register user endpoint '''
         if 'username' not in args and 'email' not in args:
-            raise BadRequest(message='username or email must be required')
+            raise BadRequest(code=400, message='username or email must be required')
         args['password'] = flask_bcrypt.generate_password_hash(args['password'])
-        item = user_repo.insert_one(args)
-        return {'item': item, 'message': 'Signup user is successful'}, 201
+        user = user_repo.insert_one(args)
+        if user is None:
+            raise BadRequest(code=400, message="user existed")
+        return {'item': to_json(user), 'message': 'Signup user is successful'}, 201
 
 
 @ns.route('/login')
@@ -51,6 +52,6 @@ class APIUserLogin(Resource):
             del user['password']
             access_token = create_access_token(identity=args)
             user['access_token'] = access_token
-            return {'item': user, 'message': 'Login successfully'}, 200
+            return {'item': to_json(user), 'message': 'Login successfully'}, 200
         else:
             raise BadRequest(code=400, message='Invalid username or password')

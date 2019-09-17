@@ -3,9 +3,9 @@ from app.extensions import mongo
 
 class UserRepository(object):
     def insert_one(self, data):
-        if mongo.db.user.find_one({'username': data['username']}) is not None:
+        if 'username' in data and mongo.db.user.find_one({'username': data['username']}) is not None:
             return None
-        if mongo.db.user.find_one({'email': data['email']}) is not None:
+        if 'email' in data and mongo.db.user.find_one({'email': data['email']}) is not None:
             return None
         result = mongo.db.user.insert_one(data)
         user = mongo.db.user.find_one({"_id": result.inserted_id})

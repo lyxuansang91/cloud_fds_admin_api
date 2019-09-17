@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import wraps
 from random import choice, randint
 
+from bson.objectid import ObjectId
 from flask import g, request
 from jsonschema import FormatChecker, validate
 from jsonschema.exceptions import ValidationError
@@ -76,8 +77,20 @@ def use_args(**schema):
 
 
 def get_model_value(val):
+    if isinstance(val, ObjectId):
+        return str(val)
     if isinstance(val, datetime):
         return val.strftime('%Y-%m-%d %H:%M:%S')
     if isinstance(val, enum.Enum):
         return val.value
+    if isinstance(val, bytes):
+        return str(val, 'utf-8')
     return val
+
+
+def to_json(val):
+    keys = val.keys()
+    res = {
+        k: get_model_value(val[k]) for k in keys
+    }
+    return res
