@@ -12,7 +12,7 @@ from app.errors.exceptions import BadRequest, UnSupportedMediaType
 
 
 def get_current_user():
-    return getattr(g, 'user')
+    return getattr(g, 'user', None)
 
 
 def generate_random_code(n=6):
