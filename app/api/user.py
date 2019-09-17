@@ -26,6 +26,8 @@ class APIUserRegister(Resource):
     })
     def post(self, args):
         ''' register user endpoint '''
+        if 'username' not in args and 'email' not in args:
+            raise BadRequest(message='username or email must be required')
         args['password'] = flask_bcrypt.generate_password_hash(args['password'])
         item = user_repo.insert_one(args)
         return {'item': item, 'message': 'Signup user is successful'}, 201
