@@ -25,6 +25,7 @@ python-dotenv = "*"
 flask-pymongo = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.7"
