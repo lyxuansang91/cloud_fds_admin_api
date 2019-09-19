@@ -26,6 +26,7 @@ flask-pymongo = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
 gunicorn = "*"
+dnspython = "*"
 
 [requires]
 python_version = "3.7"
