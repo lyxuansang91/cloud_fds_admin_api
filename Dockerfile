@@ -16,7 +16,7 @@ FROM python:3.7-alpine
 
 RUN adduser -D adminapi
 
-WORKDIR /home/identity
+WORKDIR /home/adminapi
 COPY --from=builder /install /usr/local
 COPY app/ app/
 COPY entry-point.sh .
