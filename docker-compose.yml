@@ -1,6 +1,6 @@
 version: "3"
 services:
-  tekoid:
+  cloud-fds-admin-api:
     env_file: .env
     build: .
     image: cloud-fds-admin-api:1.0
