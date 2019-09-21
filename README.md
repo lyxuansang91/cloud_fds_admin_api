@@ -2,15 +2,15 @@
 
 Cloud FDS Admin API for Dashboard
 
-# Development
+## Development
 
-## Prequisites
+### Prequisites
 
 - Python 3.6+
 - [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/)
 - [pipenv](https://pipenv.readthedocs.io/en/latest/)
 
-## Setup
+### Setup
 
 - Install dependencies and activate virtualenv:
 
