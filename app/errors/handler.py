@@ -4,7 +4,6 @@ from .exceptions import ApiException
 
 
 def api_error_handler(error):
-    print(error)
     if isinstance(error, ApiException):
         current_app.logger.warning(
             f'HTTP_STATUS_CODE: {error.status_code} - {error.to_dict}')

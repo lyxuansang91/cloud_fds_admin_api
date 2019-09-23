@@ -14,13 +14,11 @@ def get_mongo_uri(username, password, host, port, database):
 
 class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'something-very-secret'
-    MONGO_USERNAME = os.environ.get('MONGO_USERNAME')
-    MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD')
-    MONGO_HOST = os.environ.get('MONGO_HOST') or 'localhost'
-    MONGO_PORT = os.environ.get('MONGO_PORT') or 27017
-    MONGO_DATABASE = os.environ.get('MONGO_DATABASE') or 'cloudFDS'
-    MONGO_URI = get_mongo_uri(MONGO_USERNAME, MONGO_PASSWORD, MONGO_HOST, MONGO_PORT, MONGO_DATABASE)
-    JWT_SECRET_KEY = SECRET_KEY
+    MONGODB_USERNAME = os.environ.get('MONGO_USERNAME')
+    MONGODB_PASSWORD = os.environ.get('MONGO_PASSWORD')
+    MONGODB_HOST = os.environ.get('MONGO_HOST') or 'localhost'
+    MONGODB_PORT = os.environ.get('MONGO_PORT') or 27017
+    MONGODB_DB = os.environ.get('MONGO_DATABASE') or 'cloudFDS'
     JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(days=1)
 
 

@@ -22,11 +22,12 @@ flask-restplus = "*"
 flask-marshmallow = "*"
 pyjwt = "*"
 python-dotenv = "*"
-flask-pymongo = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
 gunicorn = "*"
 dnspython = "*"
+flask-mongoengine = "*"
+flask-cors = "*"
 
 [requires]
 python_version = "3.7"

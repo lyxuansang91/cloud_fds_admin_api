@@ -5,7 +5,8 @@ from bson.objectid import ObjectId
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
-from flask_pymongo import PyMongo
+from flask_mongoengine import MongoEngine
+from flask_cors import CORS
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -20,6 +21,7 @@ class JSONEncoder(json.JSONEncoder):
 
 
 ma = Marshmallow()
-mongo = PyMongo()
 flask_bcrypt = Bcrypt()
 jwt_manager = JWTManager()
+db = MongoEngine()
+cors = CORS()
