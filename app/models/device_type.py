@@ -1,4 +1,5 @@
 from app.extensions import db
+from mongoengine import queryset_manager
 
 
 class DeviceType(db.Document):
@@ -7,6 +8,6 @@ class DeviceType(db.Document):
 
     meta = {'collection': 'deviceType'}
 
-    @db.queryset_manager
+    @queryset_manager
     def objects(doc_cls, queryset):
         return queryset.order_by('deviceId')

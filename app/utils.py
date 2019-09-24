@@ -1,4 +1,5 @@
 import enum
+import decimal
 import string
 from datetime import datetime
 from functools import wraps
@@ -77,6 +78,8 @@ def use_args(**schema):
 
 
 def get_model_value(val):
+    if isinstance(val, decimal.Decimal):
+        return float(val)
     if isinstance(val, ObjectId):
         return str(val)
     if isinstance(val, datetime):

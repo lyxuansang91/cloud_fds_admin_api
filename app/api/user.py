@@ -1,15 +1,31 @@
-import json
-
 from flask_jwt_extended import create_access_token
 from flask_restplus import Namespace, Resource
 
 from app.errors.exceptions import BadRequest
 from app.extensions import flask_bcrypt
 from app.repositories.user import user_repo
+from app.repositories.transaction import tran_repo
 
 from ..utils import consumes, use_args, to_json
 
 ns = Namespace(name="users", description="Users related operation")
+
+
+@ns.route('/<string:user_id>/transactions')
+class APITransactionList(Resource):
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'page': {'type': 'string'},
+            'size': {'type': 'string'},
+            'sort': {'type': 'string'},
+            'filter': {'type': 'string'}
+        }
+    })
+    def get(self, args, user_id):
+        transactions = tran_repo.get_transaction_list(args)
+        items = [to_json(item._data) for item in transactions.items]
+        return {'items': items, 'page': transactions.page, 'count': transactions.total}, 200
 
 
 @ns.route('')
@@ -44,10 +60,9 @@ class APIUserRegister(Resource):
         if 'username' not in args and 'email' not in args:
             raise BadRequest(code=400, message='username or email must be required')
         args['password'] = flask_bcrypt.generate_password_hash(args['password'])
-        user = user_repo.insert_one(args)
+        user, message = user_repo.insert_one(args)
         if user is None:
-            raise BadRequest(code=400, message="user existed")
-        print('user:', user._data)
+            raise BadRequest(code=400, message=message)
         return {'item': to_json(user._data), 'message': 'Signup user is successful'}, 201
 
 
@@ -70,8 +85,7 @@ class APIUserLogin(Resource):
         if user and flask_bcrypt.check_password_hash(user.password, args['password']):
             data = user._data
             del data['password']
-            del args['password']
-            access_token = create_access_token(identity=args)
+            access_token = create_access_token(identity=str(user.id))
             data['access_token'] = access_token
             return {'item': to_json(data), 'message': 'Login successfully'}, 200
         else:
