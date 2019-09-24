@@ -1,5 +1,6 @@
 from flask import current_app, jsonify
 from werkzeug.exceptions import HTTPException
+
 from .exceptions import ApiException
 
 

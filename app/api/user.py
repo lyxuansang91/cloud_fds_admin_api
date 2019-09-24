@@ -1,14 +1,32 @@
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
+                                jwt_required)
 from flask_restplus import Namespace, Resource
+from flask import jsonify
 
-from app.errors.exceptions import BadRequest
-from app.extensions import flask_bcrypt
-from app.repositories.user import user_repo
+from app.errors.exceptions import BadRequest, Unauthorized
+from app.extensions import flask_bcrypt, jwt_manager
 from app.repositories.transaction import tran_repo
+from app.repositories.user import user_repo
 
-from ..utils import consumes, use_args, to_json
+from ..utils import consumes, to_json, use_args
 
 ns = Namespace(name="users", description="Users related operation")
+
+
+@jwt_manager.invalid_token_loader
+def invalid_token_callback(callback):
+    return jsonify({'error': {'message': 'Invalid token', 'code': 401}}), 401
+
+
+@jwt_manager.unauthorized_loader
+def unauthorized_response(callback):
+    return jsonify({'error': {'message': 'Missing authorization header', 'code': 401}}), 401
+
+
+@jwt_manager.expired_token_loader
+def expired_token_callback(expired_token):
+    token_type = expired_token['type']
+    return jsonify({'error': {'message': 'The {} token has expired'.format(token_type), 'code': 401}}), 401
 
 
 @ns.route('/<string:user_id>/transactions')
@@ -22,6 +40,7 @@ class APITransactionList(Resource):
             'filter': {'type': 'string'}
         }
     })
+    @jwt_required
     def get(self, args, user_id):
         transactions = tran_repo.get_transaction_list(args)
         items = [to_json(item._data) for item in transactions.items]
