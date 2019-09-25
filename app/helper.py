@@ -13,16 +13,17 @@ class Helper(object):
     @classmethod
     def get_sort_from_args(cls, args, fields):
         # Sorting result
+        sorts = []
         if 'sort' in args and args['sort']:
-            sort_by = args['sort']
+            _sorts = args['sort'].split(',')
             sorted_fields = Helper.get_sort_type_by_fields(fields)
-            if sort_by not in sorted_fields:
-                raise BadRequest(description='Sort is not valid')
-            index = sort_by.rindex('_')
-            sort = [sort_by[:index], sort_by[index + 1:]]
-        else:
-            sort = None
-        return sort
+            for sort_item in _sorts:
+                if sort_item not in sorted_fields:
+                    raise BadRequest(description='Sort is not valid')
+                index = sort_item.rindex('_')
+                sort = [sort_item[:index], sort_item[index + 1:]]
+                sorts.append(sort)
+        return sorts
 
     @classmethod
     def get_page_from_args(cls, args):
@@ -49,7 +50,7 @@ class Helper(object):
     @classmethod
     def get_fields_from_args(cls, args):
         if 'filter' in args and args['filter']:
-            fields = args['filter'].split()
+            fields = args['filter'].split(',')
         else:
             fields = None
         return fields

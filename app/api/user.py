@@ -3,7 +3,7 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
 from flask_restplus import Namespace, Resource
 from flask import jsonify
 
-from app.errors.exceptions import BadRequest, Unauthorized
+from app.errors.exceptions import BadRequest
 from app.extensions import flask_bcrypt, jwt_manager
 from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
@@ -37,14 +37,15 @@ class APITransactionList(Resource):
             'page': {'type': 'string'},
             'size': {'type': 'string'},
             'sort': {'type': 'string'},
-            'filter': {'type': 'string'}
+            'filter': {'type': 'string'},
+            'optional': {'type': 'string'}
         }
     })
     @jwt_required
     def get(self, args, user_id):
-        transactions = tran_repo.get_transaction_list(args)
-        items = [to_json(item._data) for item in transactions.items]
-        return {'items': items, 'page': transactions.page, 'count': transactions.total}, 200
+        items, page_items, count_items = tran_repo.get_transaction_list(args)
+        res = [to_json(item) for item in items]
+        return {'items': res, 'page': page_items, 'count': count_items}, 200
 
 
 @ns.route('')
