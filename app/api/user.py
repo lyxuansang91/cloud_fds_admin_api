@@ -119,7 +119,7 @@ class APIUserLogin(Resource):
             raise BadRequest(code=400, message='RoleType is not valid')
         if user:
             if flask_bcrypt.check_password_hash(user.password, args['password']):
-                if user.emailVerfied:
+                if user.emailVerified:
                     data = user._data
                     del data['password']
                     access_token = create_access_token(identity=str(user.id))

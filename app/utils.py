@@ -47,6 +47,8 @@ def authorized():
             user = user_repo.get_by_id(current_user_id)
             if user is None:
                 raise Unauthorized(code=401, message='Unauthorized Error')
+            if user.emailVerified:
+                raise Unauthorized(code=401, message='Email is not verified')
             new_args = args + (user, )
             return func(*new_args, **kwargs)
         return wrapper
