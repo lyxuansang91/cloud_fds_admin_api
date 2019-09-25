@@ -1,32 +1,48 @@
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
                                 jwt_required)
 from flask_restplus import Namespace, Resource
-from flask import jsonify
 
-from app.errors.exceptions import BadRequest
-from app.extensions import flask_bcrypt, jwt_manager
+from app.errors.exceptions import BadRequest, NotFound
+from app.extensions import flask_bcrypt
 from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
 
-from ..utils import consumes, to_json, use_args
+from ..utils import consumes, to_json, use_args, authorized
 
 ns = Namespace(name="users", description="Users related operation")
 
 
-@jwt_manager.invalid_token_loader
-def invalid_token_callback(callback):
-    return jsonify({'error': {'message': 'Invalid token', 'code': 401}}), 401
+@ns.route('/<string:user_id>')
+class APIUser(Resource):
 
+    @jwt_required
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'password': {'type': 'string'},
+            'company': {'type': 'string'},
+            'contactNumber': {'type': 'string'},
+            'address': {'type': 'string'},
+            'isActive': {'type': 'boolean'},
+            'emailVerfied': {'type': 'boolean'},
+        },
+    })
+    def put(self, current_user, args, user_id):
+        user = user_repo.get_by_id(user_id)
+        if user is None:
+            raise NotFound(message='User is not found')
+        user_repo.update_user(user, current_user, args)
+        return {}, 204
 
-@jwt_manager.unauthorized_loader
-def unauthorized_response(callback):
-    return jsonify({'error': {'message': 'Missing authorization header', 'code': 401}}), 401
-
-
-@jwt_manager.expired_token_loader
-def expired_token_callback(expired_token):
-    token_type = expired_token['type']
-    return jsonify({'error': {'message': 'The {} token has expired'.format(token_type), 'code': 401}}), 401
+    @jwt_required
+    @authorized()
+    def get(self, current_user, user_id):
+        user = user_repo.get_by_id(user_id)
+        if user is None:
+            raise NotFound(message='User is not found')
+        data = {k: user._data[k] for k in user._data if k != 'password'}
+        return {'item': to_json(data)}, 200
 
 
 @ns.route('/<string:user_id>/transactions')
@@ -65,7 +81,6 @@ class APIUserRegister(Resource):
             'roleType': {'type': 'string', "enum": ['Admin', 'User']},
             'contactNumber': {
                 'type': 'string',
-                'pattern': '^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$'
             }
         },
         'required': ['email', 'password']
@@ -102,11 +117,17 @@ class APIUserLogin(Resource):
         user = user_repo.find_by_username_or_email(username)
         if user.roleType == 'User':
             raise BadRequest(code=400, message='RoleType is not valid')
-        if user and flask_bcrypt.check_password_hash(user.password, args['password']):
-            data = user._data
-            del data['password']
-            access_token = create_access_token(identity=str(user.id))
-            data['access_token'] = access_token
-            return {'item': to_json(data), 'message': 'Login successfully'}, 200
+        if user:
+            if flask_bcrypt.check_password_hash(user.password, args['password']):
+                if user.emailVerfied:
+                    data = user._data
+                    del data['password']
+                    access_token = create_access_token(identity=str(user.id))
+                    data['access_token'] = access_token
+                    return {'item': to_json(data), 'message': 'Login successfully'}, 200
+                else:
+                    raise BadRequest(code=400, message="Email is not verified")
+            else:
+                raise BadRequest(code=400, message='Invalid username or password')
         else:
-            raise BadRequest(code=400, message='Invalid username or password')
+            raise NotFound(code=404, message="User not found")

@@ -1,5 +1,5 @@
-import enum
 import decimal
+import enum
 import string
 from datetime import datetime
 from functools import wraps
@@ -7,10 +7,13 @@ from random import choice, randint
 
 from bson.objectid import ObjectId
 from flask import g, request
+from flask_jwt_extended import get_jwt_identity
 from jsonschema import FormatChecker, validate
 from jsonschema.exceptions import ValidationError
 
-from app.errors.exceptions import BadRequest, UnSupportedMediaType
+from app.errors.exceptions import (BadRequest, Unauthorized,
+                                   UnSupportedMediaType)
+from app.repositories.user import user_repo
 
 
 def get_current_user():
@@ -32,6 +35,20 @@ def consumes(*content_types):
             if request.mimetype not in content_types:
                 raise UnSupportedMediaType(message='Unsupported media type')
             return func(*args, **kwargs)
+        return wrapper
+    return decorated
+
+
+def authorized():
+    def decorated(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = user_repo.get_by_id(current_user_id)
+            if user is None:
+                raise Unauthorized(code=401, message='Unauthorized Error')
+            new_args = args + (user, )
+            return func(*new_args, **kwargs)
         return wrapper
     return decorated
 
@@ -91,9 +108,10 @@ def get_model_value(val):
     return val
 
 
-def to_json(val):
+def to_json(val, fields=None):
     keys = val.keys()
-    res = {
-        k: get_model_value(val[k]) for k in keys
-    }
+    if fields is None:
+        res = {
+            k: get_model_value(val[k]) for k in keys
+        }
     return res

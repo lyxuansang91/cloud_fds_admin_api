@@ -1,5 +1,5 @@
 
-from flask import Blueprint, jsonify
+from flask import Blueprint
 from flask_restplus import Api
 from app.api.user import ns as user_ns
 

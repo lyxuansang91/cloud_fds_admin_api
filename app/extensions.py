@@ -1,23 +1,9 @@
-import json
-from datetime import datetime
-
-from bson.objectid import ObjectId
+from flask import jsonify
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
-from flask_cors import CORS
-
-
-class JSONEncoder(json.JSONEncoder):
-    ''' extend json-encoder class'''
-
-    def default(self, o):
-        if isinstance(o, ObjectId):
-            return str(o)
-        if isinstance(o, datetime):
-            return str(o)
-        return json.JSONEncoder.default(self, o)
 
 
 ma = Marshmallow()
@@ -25,3 +11,19 @@ flask_bcrypt = Bcrypt()
 jwt_manager = JWTManager()
 db = MongoEngine()
 cors = CORS()
+
+
+@jwt_manager.invalid_token_loader
+def invalid_token_callback(callback):
+    return jsonify({'error': {'message': 'Invalid token', 'code': 401}}), 401
+
+
+@jwt_manager.unauthorized_loader
+def unauthorized_response(callback):
+    return jsonify({'error': {'message': 'Missing authorization header', 'code': 401}}), 401
+
+
+@jwt_manager.expired_token_loader
+def expired_token_callback(expired_token):
+    token_type = expired_token['type']
+    return jsonify({'error': {'message': 'The {} token has expired'.format(token_type), 'code': 401}}), 401

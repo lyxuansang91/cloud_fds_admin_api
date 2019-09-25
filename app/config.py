@@ -11,7 +11,7 @@ class Config(object):
     MONGODB_HOST = os.environ.get('MONGO_HOST') or 'localhost'
     MONGODB_PORT = int(os.environ.get('MONGO_PORT')) or 27017
     MONGODB_DB = os.environ.get('MONGO_DATABASE') or 'cloudFDS'
-    JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(days=1)
+    JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(days=2)
 
 
 class TestingConfig(Config):
