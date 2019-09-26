@@ -6,6 +6,7 @@ from app.errors.exceptions import BadRequest, NotFound
 from app.extensions import flask_bcrypt
 from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
+from app.repositories.user_api import user_api_repo
 
 from ..utils import consumes, to_json, use_args, authorized
 
@@ -47,6 +48,9 @@ class APIUser(Resource):
 
 @ns.route('/<string:user_id>/transactions')
 class APITransactionList(Resource):
+
+    @jwt_required
+    @authorized()
     @use_args(**{
         'type': 'object',
         'properties': {
@@ -57,9 +61,29 @@ class APITransactionList(Resource):
             'optional': {'type': 'string'}
         }
     })
+    def get(self, current_user, args, user_id):
+        items, page_items, count_items = tran_repo.get_list(args)
+        res = [to_json(item) for item in items]
+        return {'items': res, 'page': page_items, 'count': count_items}, 200
+
+
+@ns.route('/<string:user_id>/userapi')
+class APIUserAPIListAndCreate(Resource):
+
     @jwt_required
-    def get(self, args, user_id):
-        items, page_items, count_items = tran_repo.get_transaction_list(args)
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'page': {'type': 'string'},
+            'size': {'type': 'string'},
+            'sort': {'type': 'string'},
+            'filter': {'type': 'string'},
+            'optional': {'type': 'string'}
+        }
+    })
+    def get(self, current_user, args, user_id):
+        items, page_items, count_items = user_api_repo.get_list(args)
         res = [to_json(item) for item in items]
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 

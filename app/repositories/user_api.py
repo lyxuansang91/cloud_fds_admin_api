@@ -2,9 +2,9 @@ from app.helper import Helper
 from app import models as m
 
 
-class TransactionRepository(object):
+class UserAPIRepository(object):
     def get_list(self, args):
-        sortable_fields = ['fromAddress', 'fromCurrency', 'toAddress', 'toCurrency', 'senderIp', 'country']
+        sortable_fields = ['createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'isActive']
         page = Helper.get_page_from_args(args)
         size = Helper.get_size_from_args(args)
         optional = args.get('optional')
@@ -13,16 +13,16 @@ class TransactionRepository(object):
         if sorts is not None:
             args = []
             for sort in sorts:
-                column = getattr(m.Transaction, sort[0])
+                column = getattr(m.UserApi, sort[0])
                 sort_method = '-' if sort[1] == 'desc' else ''
                 args.append(sort_method + column.name)
             if optional is not None and optional == 'all':
-                items = m.Transaction.objects.order_by(*args)
+                items = m.UserApi.objects.order_by(*args)
                 page_items = None
                 count_items = None
             else:
-                transactions = m.Transaction.objects.order_by(*args).paginate(page=page, per_page=size)
-                items, page_items, count_items = transactions.items, transactions.page, transactions.total
+                user_apis = m.UserApi.objects.order_by(*args).paginate(page=page, per_page=size)
+                items, page_items, count_items = user_apis.items, user_apis.page, user_apis.total
         if fields is not None:
             res = []
             for item in items:
@@ -33,4 +33,4 @@ class TransactionRepository(object):
         return res, page_items, count_items
 
 
-tran_repo = TransactionRepository()
+user_api_repo = UserAPIRepository()

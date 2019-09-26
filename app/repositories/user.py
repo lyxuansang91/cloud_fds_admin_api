@@ -20,9 +20,9 @@ class UserRepository(object):
         return user, None
 
     def find_by_username_or_email(self, username):
-        user = m.User.objects.get(username=username)
+        user = m.User.objects.filter(username=username).first()
         if user is None:
-            user = m.User.objects.get(email=username)
+            user = m.User.objects.filter(email=username).first()
         return user
 
     def update_user(self, user, current_user, args):
