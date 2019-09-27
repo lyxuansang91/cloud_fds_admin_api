@@ -1,5 +1,10 @@
-from app.helper import Helper
+from datetime import datetime
+
+from bson import ObjectId
+from flask import current_app
+
 from app import models as m
+from app.helper import Helper
 
 
 class UserAPIRepository(object):
@@ -31,6 +36,27 @@ class UserAPIRepository(object):
         else:
             res = [item._data for item in items]
         return res, page_items, count_items
+
+    def create(self, data, current_user):
+        data['updatedAt'] = datetime.utcnow()
+        data['createdBy'] = current_user.username
+        data['userId'] = ObjectId(data['userId'])
+        user_api = m.UserApi(**data)
+        user_api.save()
+        return user_api
+
+    def get_by_id(self, api_id):
+        return m.UserApi.objects(id=ObjectId(api_id)).first()
+
+    def update(self, user_api, current_user, args):
+        args['updatedAt'] = datetime.utcnow()
+        args['updatedBy'] = current_user.username
+        try:
+            user_api.update(**args)
+            return True
+        except Exception as e:
+            current_app.logger.error('exception on user_api update:', e)
+            return False
 
 
 user_api_repo = UserAPIRepository()

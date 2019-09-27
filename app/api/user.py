@@ -1,3 +1,6 @@
+import os
+from uuid import uuid4
+
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
                                 jwt_required)
 from flask_restplus import Namespace, Resource
@@ -8,7 +11,7 @@ from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
 from app.repositories.user_api import user_api_repo
 
-from ..utils import consumes, to_json, use_args, authorized
+from ..utils import authorized, consumes, to_json, use_args
 
 ns = Namespace(name="users", description="Users related operation")
 
@@ -87,6 +90,31 @@ class APIUserAPIListAndCreate(Resource):
         res = [to_json(item) for item in items]
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 
+    @jwt_required
+    @authorized()
+    def post(self, current_user, user_id):
+        args = {'apiKey': uuid4().hex, 'apiSecret': os.urandom(32).hex(), 'userId': user_id}
+        user = user_api_repo.create(args, current_user)
+        return {'item': to_json(user._data), 'message': ''}, 200
+
+
+@ns.route('/<string:user_id>/userapi/<string:api_id>')
+class APIUserAPIUpdate(Resource):
+    @jwt_required
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'isActive': {'type': 'boolean'},
+        }
+    })
+    def put(self, current_user, args, user_id, api_id):
+        user_api = user_api_repo.get_by_id(api_id)
+        if user_api is None:
+            raise NotFound(message='UserAPI is not found')
+        user_api_repo.update(user_api, current_user, args)
+        return {}, 204
+
 
 @ns.route('')
 class APIUserRegister(Resource):
@@ -139,8 +167,8 @@ class APIUserLogin(Resource):
     def post(self, args):
         username = args.get('username')
         user = user_repo.find_by_username_or_email(username)
-        if user.roleType == 'User':
-            raise BadRequest(code=400, message='RoleType is not valid')
+        # if user.roleType == 'User':
+        #     raise BadRequest(code=400, message='RoleType is not valid')
         if user:
             if flask_bcrypt.check_password_hash(user.password, args['password']):
                 if user.emailVerified:

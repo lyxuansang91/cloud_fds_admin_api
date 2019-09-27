@@ -27,14 +27,14 @@ class UserRepository(object):
 
     def update_user(self, user, current_user, args):
         args['updatedAt'] = datetime.utcnow()
-        args['updatedBy'] = current_user.email
+        args['updatedBy'] = current_user.username
         if 'password' in args:
             args['password'] = flask_bcrypt.generate_password_hash(args['password']).decode('utf-8')
         try:
             user.update(**args)
             return True
         except Exception as e:
-            current_app.logger.error('exception:', e)
+            current_app.logger.error('exception on user update:', e)
             return False
 
 
