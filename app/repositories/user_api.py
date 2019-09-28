@@ -15,6 +15,7 @@ class UserAPIRepository(object):
         optional = args.get('optional')
         sorts = Helper.get_sort_from_args(args, sortable_fields)
         fields = Helper.get_fields_from_args(args)
+        user_id = args['user_id']
         if sorts is not None:
             args = []
             for sort in sorts:
@@ -22,11 +23,11 @@ class UserAPIRepository(object):
                 sort_method = '-' if sort[1] == 'desc' else ''
                 args.append(sort_method + column.name)
             if optional is not None and optional == 'all':
-                items = m.UserApi.objects.order_by(*args)
+                items = m.UserApi.objects(userId=ObjectId(user_id)).order_by(*args)
                 page_items = None
                 count_items = None
             else:
-                user_apis = m.UserApi.objects.order_by(*args).paginate(page=page, per_page=size)
+                user_apis = m.UserApi.objects(userId=ObjectId(user_id)).order_by(*args).paginate(page=page, per_page=size)
                 items, page_items, count_items = user_apis.items, user_apis.page, user_apis.total
         if fields is not None:
             res = []

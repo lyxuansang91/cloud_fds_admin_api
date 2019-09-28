@@ -28,20 +28,26 @@ class APIUser(Resource):
             'company': {'type': 'string'},
             'contactNumber': {'type': 'string'},
             'address': {'type': 'string'},
-            'isActive': {'type': 'boolean'},
-            'emailVerfied': {'type': 'boolean'},
+            'isActive': {'type': 'boolean'}
         },
     })
     def put(self, current_user, args, user_id):
+        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        if current_user.roleType == 'User':
+            del args['isActive']
         user = user_repo.get_by_id(user_id)
         if user is None:
             raise NotFound(message='User is not found')
         user_repo.update_user(user, current_user, args)
-        return {}, 204
+        user.reload()
+        return {'item': to_json(user._data)}, 204
 
     @jwt_required
     @authorized()
     def get(self, current_user, user_id):
+        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+            raise BadRequest(message=f'UserId {user_id} is not valid')
         user = user_repo.get_by_id(user_id)
         if user is None:
             raise NotFound(message='User is not found')
@@ -65,6 +71,9 @@ class APITransactionList(Resource):
         }
     })
     def get(self, current_user, args, user_id):
+        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        args['user_id'] = user_id
         items, page_items, count_items = tran_repo.get_list(args)
         res = [to_json(item) for item in items]
         return {'items': res, 'page': page_items, 'count': count_items}, 200
@@ -86,6 +95,9 @@ class APIUserAPIListAndCreate(Resource):
         }
     })
     def get(self, current_user, args, user_id):
+        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        args['user_id'] = user_id
         items, page_items, count_items = user_api_repo.get_list(args)
         res = [to_json(item) for item in items]
         return {'items': res, 'page': page_items, 'count': count_items}, 200
@@ -95,7 +107,7 @@ class APIUserAPIListAndCreate(Resource):
     def post(self, current_user, user_id):
         args = {'apiKey': uuid4().hex, 'apiSecret': os.urandom(32).hex(), 'userId': user_id}
         user = user_api_repo.create(args, current_user)
-        return {'item': to_json(user._data), 'message': ''}, 200
+        return {'item': to_json(user._data), 'message': 'create UserAPI successfully'}, 200
 
 
 @ns.route('/<string:user_id>/userapi/<string:api_id>')
@@ -109,11 +121,14 @@ class APIUserAPIUpdate(Resource):
         }
     })
     def put(self, current_user, args, user_id, api_id):
+        if current_user.roleType == 'User':
+            raise BadRequest(message='RoleType is not valid')
         user_api = user_api_repo.get_by_id(api_id)
         if user_api is None:
             raise NotFound(message='UserAPI is not found')
         user_api_repo.update(user_api, current_user, args)
-        return {}, 204
+        user_api.reload()
+        return {'item': to_json(user_api._data)}, 204
 
 
 @ns.route('')
@@ -167,8 +182,6 @@ class APIUserLogin(Resource):
     def post(self, args):
         username = args.get('username')
         user = user_repo.find_by_username_or_email(username)
-        # if user.roleType == 'User':
-        #     raise BadRequest(code=400, message='RoleType is not valid')
         if user:
             if flask_bcrypt.check_password_hash(user.password, args['password']):
                 if user.emailVerified:
@@ -177,9 +190,6 @@ class APIUserLogin(Resource):
                     access_token = create_access_token(identity=str(user.id))
                     data['access_token'] = access_token
                     return {'item': to_json(data), 'message': 'Login successfully'}, 200
-                else:
-                    raise BadRequest(code=400, message="Email is not verified")
-            else:
-                raise BadRequest(code=400, message='Invalid username or password')
-        else:
-            raise NotFound(code=404, message="User not found")
+                raise BadRequest(code=400, message="Email is not verified")
+            raise BadRequest(code=400, message='Invalid username or password')
+        raise NotFound(code=404, message="User not found")

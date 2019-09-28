@@ -8,21 +8,21 @@ from app.extensions import flask_bcrypt
 
 class UserRepository(object):
     def get_by_id(self, user_id):
-        return m.User.objects.filter(id=ObjectId(user_id)).first()
+        return m.User.objects(id=ObjectId(user_id)).first()
 
     def insert_one(self, data):
-        if 'email' in data and m.User.objects.filter(email=data['email']).first() is not None:
+        if 'email' in data and m.User.objects(email=data['email']).first() is not None:
             return None, 'email existing'
-        if 'username' in data and m.User.objects.filter(username=data['username']).first() is not None:
+        if 'username' in data and m.User.objects(username=data['username']).first() is not None:
             return None, 'username existing'
         user = m.User(**data)
         user.save()
         return user, None
 
     def find_by_username_or_email(self, username):
-        user = m.User.objects.filter(username=username).first()
+        user = m.User.objects(username=username).first()
         if user is None:
-            user = m.User.objects.filter(email=username).first()
+            user = m.User.objects(email=username).first()
         return user
 
     def update_user(self, user, current_user, args):
