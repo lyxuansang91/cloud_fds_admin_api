@@ -3,17 +3,20 @@ from uuid import uuid4
 
 from flask import current_app, render_template, request
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
-                                jwt_required)
+                                jwt_required, jwt_optional)
 from flask_restplus import Namespace, Resource
 
+from app.email import send_email
 from app.errors.exceptions import BadRequest, NotFound
 from app.extensions import flask_bcrypt
 from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
+from app.repositories.user_access_token import user_access_token_repo
 from app.repositories.user_api import user_api_repo
+from app.repositories.billing_type import billing_type_repo
 
-from ..utils import authorized, consumes, to_json, use_args
-from app.email import send_email
+from ..decorators import authorized, consumes, use_args
+from ..utils import to_json
 
 ns = Namespace(name="users", description="Users related operation")
 
@@ -55,8 +58,7 @@ class APIUser(Resource):
         user = user_repo.get_by_id(user_id)
         if user is None:
             raise NotFound(message='User is not found')
-        user_repo.update_user(user, current_user, args)
-        user.reload()
+        user = user_repo.update_user(user, current_user, args)
         return {'item': to_json(user._data)}, 204
 
     @jwt_required
@@ -142,13 +144,14 @@ class APIUserAPIUpdate(Resource):
         user_api = user_api_repo.get_by_id(api_id)
         if user_api is None:
             raise NotFound(message='UserAPI is not found')
-        user_api_repo.update(user_api, current_user, args)
-        user_api.reload()
+        user_api = user_api_repo.update(user_api, current_user, args)
         return {'item': to_json(user_api._data)}, 204
 
 
 @ns.route('')
 class APIUserRegister(Resource):
+    @jwt_optional
+    @authorized()
     @use_args(**{
         'type': 'object',
         'properties': {
@@ -164,20 +167,27 @@ class APIUserRegister(Resource):
             'roleType': {'type': 'string', "enum": ['Admin', 'User']},
             'contactNumber': {
                 'type': 'string',
-            }
+            },
+            'billingType': {'type': 'string', 'enum': ['Monthly', 'Metered']}
         },
         'required': ['email', 'password']
     })
-    def post(self, args):
+    def post(self, current_user, args):
         ''' register user endpoint '''
         role_type = args.get('roleType', 'User')
         if role_type not in ['Admin', 'User']:
             raise BadRequest(message='Role type must be Admin or User')
-        args['createdBy'] = args.get('createdBy', 'Admin')
+        billing_type = args.get('billingType', 'Monthly')
+        if billing_type not in ['Monthly', 'Metered']:
+            raise BadRequest(message='Billing type must be Monthly or Metered')
+        args['billingType'] = billing_type_repo.get_by_billing_type(billing_type).id
         args['roleType'] = role_type
+        created_by = args.get('username') if current_user is None else current_user.username
+        args['createdBy'] = args.get('createdBy', created_by)
         if 'username' not in args and 'email' not in args:
-            raise BadRequest(code=400, message='username or email must be required')
+            raise BadRequest(code=400, message='Username or email must be required')
         args['password'] = flask_bcrypt.generate_password_hash(args['password'])
+
         user, message = user_repo.insert_one(args)
         if user is None:
             raise BadRequest(code=400, message=message)
@@ -209,13 +219,27 @@ class APIUserLogin(Resource):
         if user:
             if flask_bcrypt.check_password_hash(user.password, args['password']):
                 if user.emailVerified:
-
                     access_token = create_access_token(identity=str(user.id))
                     user = user_repo.change_last_login(user)
                     data = user._data
                     del data['password']
                     data['access_token'] = access_token
-                    return {'item': to_json(data), 'message': 'Login successfully'}, 200
+                    token_args = {'userId': str(user.id), 'accessToken': access_token}
+                    user_access_token = user_access_token_repo.create(token_args)
+                    if user_access_token:
+                        return {'item': to_json(data), 'message': 'Login successfully'}, 200
+                    raise BadRequest(code=400, message='Access token is not created')
                 raise BadRequest(code=400, message="Email is not verified")
             raise BadRequest(code=400, message='Invalid username or password')
         raise NotFound(code=404, message="User not found")
+
+
+@ns.route('/<string:user_id>/logout')
+class APIUserLogout(Resource):
+    @jwt_required
+    @authorized()
+    def post(self, current_user, user_id):
+        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        user_access_token_repo.remove_by_user_id(user_id=user_id)
+        return {'message': f"Logout {user_id} successfully"}, 204

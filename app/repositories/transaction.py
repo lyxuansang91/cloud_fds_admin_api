@@ -1,6 +1,7 @@
 from app.helper import Helper
 from app import models as m
 from bson import ObjectId
+from ..repositories.user import user_repo
 
 
 class TransactionRepository(object):
@@ -12,6 +13,7 @@ class TransactionRepository(object):
         sorts = Helper.get_sort_from_args(args, sortable_fields)
         fields = Helper.get_fields_from_args(args)
         user_id = args['user_id']
+        username = user_repo.get_by_id(user_id).username
         if sorts is not None:
             args = []
             for sort in sorts:
@@ -32,6 +34,7 @@ class TransactionRepository(object):
                 res.append(data)
         else:
             res = [item._data for item in items]
+        res = [{**tx, 'username': username} for tx in res]
         return res, page_items, count_items
 
 
