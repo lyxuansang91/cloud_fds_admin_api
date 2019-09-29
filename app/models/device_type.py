@@ -9,5 +9,5 @@ class DeviceType(db.Document):
     meta = {'collection': 'deviceType'}
 
     @queryset_manager
-    def objects(doc_cls, queryset):
+    def objects(doc_cls, queryset):  # noqa
         return queryset.order_by('deviceId')

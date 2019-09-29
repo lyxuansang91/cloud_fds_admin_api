@@ -54,10 +54,12 @@ class UserAPIRepository(object):
         args['updatedBy'] = current_user.username
         try:
             user_api.update(**args)
-            return True
+            user_api.reload()
+            return user_api
         except Exception as e:
             current_app.logger.error('exception on user_api update:', e)
-            return False
+            user_api.reload()
+            return user_api
 
 
 user_api_repo = UserAPIRepository()

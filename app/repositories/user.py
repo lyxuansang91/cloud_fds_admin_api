@@ -85,10 +85,12 @@ class UserRepository(object):
             args['password'] = flask_bcrypt.generate_password_hash(args['password']).decode('utf-8')
         try:
             user.update(**args)
-            return True
+            user.reload()
+            return user
         except Exception as e:
             current_app.logger.error('exception on user update:', e)
-            return False
+            user.reload()
+            return user
 
 
 user_repo = UserRepository()
