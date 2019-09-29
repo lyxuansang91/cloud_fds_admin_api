@@ -28,6 +28,7 @@ gunicorn = "*"
 dnspython = "*"
 flask-mongoengine = "*"
 flask-cors = "*"
+flask-mail = "*"
 
 [requires]
 python_version = "3.7"

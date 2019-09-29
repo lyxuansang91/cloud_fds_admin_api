@@ -1,6 +1,7 @@
 import os
 from uuid import uuid4
 
+from flask import current_app, render_template, request
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
                                 jwt_required)
 from flask_restplus import Namespace, Resource
@@ -12,8 +13,23 @@ from app.repositories.user import user_repo
 from app.repositories.user_api import user_api_repo
 
 from ..utils import authorized, consumes, to_json, use_args
+from app.email import send_email
 
 ns = Namespace(name="users", description="Users related operation")
+
+
+@ns.route('/verify')
+class APIUserEmailRegistration(Resource):
+    def get(self):
+        args = request.args.to_dict()
+        token = args.get('token')
+        if token is None:
+            raise BadRequest(message='Token is required')
+        user = user_repo.get_user_from_token(token=token)
+        user = user_repo.verify_user(user)
+        data = user._data
+        del data['password']
+        return to_json(data), 201
 
 
 @ns.route('/<string:user_id>')
@@ -165,7 +181,15 @@ class APIUserRegister(Resource):
         user, message = user_repo.insert_one(args)
         if user is None:
             raise BadRequest(code=400, message=message)
-        return {'item': to_json(user._data), 'message': 'Signup user is successful'}, 201
+        token = user_repo.generate_registration_token(user)
+        send_email(
+            subject='[TheVault] Email Registration',
+            sender=current_app.config['MAIL_USERNAME'],
+            recipients=[user.email],
+            html_body=render_template('email/email_verification.html', user=user, token=token))
+        data = user._data
+        del data['password']
+        return {'item': to_json(data), 'message': 'Signup user is successful'}, 201
 
 
 @ns.route('/login')
@@ -185,9 +209,11 @@ class APIUserLogin(Resource):
         if user:
             if flask_bcrypt.check_password_hash(user.password, args['password']):
                 if user.emailVerified:
+
+                    access_token = create_access_token(identity=str(user.id))
+                    user = user_repo.change_last_login(user)
                     data = user._data
                     del data['password']
-                    access_token = create_access_token(identity=str(user.id))
                     data['access_token'] = access_token
                     return {'item': to_json(data), 'message': 'Login successfully'}, 200
                 raise BadRequest(code=400, message="Email is not verified")

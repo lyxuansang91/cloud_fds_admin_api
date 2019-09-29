@@ -5,7 +5,7 @@ from flask import Flask
 from werkzeug.exceptions import default_exceptions
 
 from .errors.handler import api_error_handler
-from .extensions import cors, db, flask_bcrypt, jwt_manager, ma
+from .extensions import cors, db, flask_bcrypt, jwt_manager, ma, mail
 
 
 def create_app(config_cls):
@@ -42,6 +42,7 @@ def __init_app(app):
     ma.init_app(app)
     flask_bcrypt.init_app(app)
     jwt_manager.init_app(app)
+    mail.init_app(app)
     db.init_app(app)
 
 
