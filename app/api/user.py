@@ -14,6 +14,7 @@ from app.repositories.user import user_repo
 from app.repositories.user_access_token import user_access_token_repo
 from app.repositories.user_api import user_api_repo
 from app.repositories.billing_type import billing_type_repo
+from app.repositories.api_usage_count import api_usage_count_repo
 
 from ..decorators import authorized, consumes, use_args
 from ..utils import to_json
@@ -71,6 +72,29 @@ class APIUser(Resource):
             raise NotFound(message='User is not found')
         data = {k: user._data[k] for k in user._data if k != 'password'}
         return {'item': to_json(data)}, 200
+
+
+@ns.route('/<string:user_id>/usage')
+class APIUsageDetail(Resource):
+    @jwt_required
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'page': {'type': 'string'},
+            'size': {'type': 'string'},
+            'sort': {'type': 'string'},
+            'filter': {'type': 'string'},
+            'optional': {'type': 'string'}
+        }
+    })
+    def get(self, current_user, args, user_id):
+        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        args['user_id'] = user_id
+        items, page_items, count_items = api_usage_count_repo.get_list(args)
+        res = [to_json(item) for item in items]
+        return {'items': res, 'page': page_items, 'count': count_items}, 200
 
 
 @ns.route('/<string:user_id>/transactions')
