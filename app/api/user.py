@@ -122,8 +122,16 @@ class APIUserAPIListAndCreate(Resource):
 
     @jwt_required
     @authorized()
-    def post(self, current_user, user_id):
-        args = {'apiKey': uuid4().hex, 'apiSecret': os.urandom(32).hex(), 'userId': user_id}
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'apiName': {'type': 'string'}
+        }
+    })
+    def post(self, current_user, args, user_id):
+        args['apiKey'] = uuid4().hex
+        args['apiSecret'] = os.urandom(32).hex()
+        args['userId'] = user_id
         user = user_api_repo.create(args, current_user)
         return {'item': to_json(user._data), 'message': 'create UserAPI successfully'}, 200
 
