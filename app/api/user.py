@@ -157,7 +157,7 @@ class APIUserAPIUpdate(Resource):
 
 
 @ns.route('')
-class APIUserRegister(Resource):
+class APIUserRegisterAndList(Resource):
     @jwt_optional
     @authorized()
     @use_args(**{
@@ -208,6 +208,25 @@ class APIUserRegister(Resource):
         data = user._data
         del data['password']
         return {'item': to_json(data), 'message': 'Signup user is successful'}, 201
+
+    @jwt_required
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'page': {'type': 'string'},
+            'size': {'type': 'string'},
+            'sort': {'type': 'string'},
+            'filter': {'type': 'string'},
+            'optional': {'type': 'string'},
+        }
+    })
+    def get(self, current_user, args):
+        if current_user.roleType == 'User':
+            raise BadRequest(message='Role admin is required')
+        items, page_items, count_items = user_repo.get_list(args)
+        res = [to_json(item) for item in items]
+        return {'items': res, 'page': page_items, 'count': count_items}, 200
 
 
 @ns.route('/login')
