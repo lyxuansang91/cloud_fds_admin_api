@@ -1,6 +1,8 @@
-from app.helper import Helper
-from app import models as m
 from bson import ObjectId
+
+from app import models as m
+from app.helper import Helper
+
 from ..repositories.user import user_repo
 
 
@@ -27,6 +29,10 @@ class TransactionRepository(object):
             else:
                 transactions = m.Transaction.objects(userId=ObjectId(user_id)).order_by(*args).paginate(page=page, per_page=size)
                 items, page_items, count_items = transactions.items, transactions.page, transactions.total
+        else:
+            transactions = m.Transaction.objects(userId=ObjectId(user_id)).paginate(page=page, per_page=size)
+            items, page_items, count_items = transactions.items, transactions.page, transactions.total
+
         if fields is not None:
             res = []
             for item in items:

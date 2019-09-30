@@ -29,6 +29,10 @@ class UserAPIRepository(object):
             else:
                 user_apis = m.UserApi.objects(userId=ObjectId(user_id)).order_by(*args).paginate(page=page, per_page=size)
                 items, page_items, count_items = user_apis.items, user_apis.page, user_apis.total
+        else:
+            user_apis = m.UserApi.objects(userId=ObjectId(user_id)).paginate(page=page, per_page=size)
+            items, page_items, count_items = user_apis.items, user_apis.page, user_apis.total
+
         if fields is not None:
             res = []
             for item in items:
