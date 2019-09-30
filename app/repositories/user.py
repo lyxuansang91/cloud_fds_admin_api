@@ -7,9 +7,38 @@ from flask import current_app
 from app import models as m
 from app.errors.exceptions import BadRequest
 from app.extensions import flask_bcrypt
+from app.helper import Helper
 
 
 class UserRepository(object):
+
+    def get_list(self, args):
+        sortable_fields = ['createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'isActive',
+                           'company', 'email', 'address', 'billingType', 'roleType', 'username', 'lastSignin']
+        page = Helper.get_page_from_args(args)
+        size = Helper.get_size_from_args(args)
+        optional = args.get('optional')
+        sorts = Helper.get_sort_from_args(args, sortable_fields)
+        fields = Helper.get_fields_from_args(args)
+        if sorts is not None:
+            args = []
+            for sort in sorts:
+                column = getattr(m.User, sort[0])
+                sort_method = '-' if sort[1] == 'desc' else ''
+                args.append(sort_method + column.name)
+            if optional is not None and optional == 'all':
+                items = m.User.objects.order_by(*args)
+                page_items = None
+                count_items = len(items)
+            else:
+                users = m.User.objects.order_by(*args).paginate(page=page, per_page=size)
+                items, page_items, count_items = users.items, users.page, users.total
+        res = []
+        for item in items:
+            data = {k: item._data[k] for k in item._data if (fields is None or k in fields) and k != 'password'}
+            res.append(data)
+
+        return res, page_items, count_items
 
     def verify_user(self, user):
         user.update(emailVerified=True)
