@@ -133,14 +133,21 @@ class APIUserAPIListAndCreate(Resource):
             'size': {'type': 'string'},
             'sort': {'type': 'string'},
             'filter': {'type': 'string'},
-            'optional': {'type': 'string'}
+            'optional': {'type': 'string'},
+            'active': {'type': 'string'},
         }
     })
     def get(self, current_user, args, user_id):
+        if args.get('active') == 'false':
+            active = False
+        elif args.get('active') == 'true':
+            active = True
+        else:
+            active = None
         if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
-        items, page_items, count_items = user_api_repo.get_list(args)
+        items, page_items, count_items = user_api_repo.get_list(args, active)
         res = [to_json(item) for item in items]
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 
