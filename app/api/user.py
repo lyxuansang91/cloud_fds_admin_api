@@ -52,7 +52,7 @@ class APIUser(Resource):
         },
     })
     def put(self, current_user, args, user_id):
-        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+        if current_user.roleType == 'User' and (str(current_user.id != user_id) or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         if current_user.roleType == 'User':
             del args['isActive']
@@ -65,7 +65,7 @@ class APIUser(Resource):
     @jwt_required
     @authorized()
     def get(self, current_user, user_id):
-        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         user = user_repo.get_by_id(user_id)
         if user is None:
@@ -89,7 +89,7 @@ class APIUsageDetail(Resource):
         }
     })
     def get(self, current_user, args, user_id):
-        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
         items, page_items, count_items = api_usage_count_repo.get_list(args)
@@ -113,7 +113,7 @@ class APITransactionList(Resource):
         }
     })
     def get(self, current_user, args, user_id):
-        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
         items, page_items, count_items = tran_repo.get_list(args)
@@ -137,7 +137,7 @@ class APIUserAPIListAndCreate(Resource):
         }
     })
     def get(self, current_user, args, user_id):
-        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
         items, page_items, count_items = user_api_repo.get_list(args)
@@ -290,7 +290,7 @@ class APIUserLogout(Resource):
     @jwt_required
     @authorized()
     def post(self, current_user, user_id):
-        if current_user.roleType == 'User' and (current_user.id != user_id or not current_user.isActive):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         user_access_token_repo.remove_by_user_id(user_id=user_id)
         return {'message': f"Logout {user_id} successfully"}, 204
