@@ -61,27 +61,27 @@ class UserRepository(object):
             claims = jwt.decode(token, key=secret_key, algorithms=['HS256'])
         except jwt.DecodeError as err:
             current_app.logger.error(err)
-            raise BadRequest(message='Could not get information')
+            return None, 'Could not get information'
         except jwt.ExpiredSignatureError as err:
             current_app.logger.error(err)
-            raise BadRequest(message='Signature expired')
+            return None, 'Signature expired'
         except jwt.InvalidTokenError as err:
             current_app.logger.error(err)
-            raise BadRequest(message='Invalid token')
+            return None, 'Invalid token'
 
         user_id = claims.get('user')
         email = claims.get('email')
         created_at = claims.get('iat')
         expired_at = claims.get('exp')
         if user_id is None or email is None or created_at is None or expired_at is None:
-            raise BadRequest(message='Token is not valid')
+            return None, 'Token is not valid'
         # TODO: SangLX - get information from token
         user = m.User.objects(id=ObjectId(user_id)).first()
         if user is None or user.email != email:
-            raise BadRequest(message='Token is not valid')
+            return None, 'Token is not valid'
         if user.emailVerified:
-            raise BadRequest(message='Email is verified')
-        return user
+            return None, 'Email is verified'
+        return user, None
 
     def get_by_id(self, user_id):
         return m.User.objects(id=ObjectId(user_id)).first()

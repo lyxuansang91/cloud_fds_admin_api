@@ -5,6 +5,7 @@ from flask import current_app, render_template, request
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
                                 jwt_required, jwt_optional)
 from flask_restplus import Namespace, Resource
+from flask import redirect
 
 from app.email import send_email
 from app.errors.exceptions import BadRequest, NotFound
@@ -27,13 +28,16 @@ class APIUserEmailRegistration(Resource):
     def get(self):
         args = request.args.to_dict()
         token = args.get('token')
-        if token is None:
-            raise BadRequest(message='Token is required')
-        user = user_repo.get_user_from_token(token=token)
-        user = user_repo.verify_user(user)
-        data = user._data
-        del data['password']
-        return to_json(data), 201
+        if token is not None:
+            user, message = user_repo.get_user_from_token(token=token)
+            if message:
+                verify = "false"
+            else:
+                user = user_repo.verify_user(user)
+                verify = "true"
+        else:
+            verify = "false"
+        return redirect("{url}/verify={verify}".format(url=current_app.config.get('LOGIN_URL'), verify=verify))
 
 
 @ns.route('/<string:user_id>')
