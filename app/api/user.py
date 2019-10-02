@@ -175,6 +175,7 @@ class APIUserAPIUpdate(Resource):
         'type': 'object',
         'properties': {
             'isActive': {'type': 'boolean'},
+            'apiName': {'type': 'string'}
         }
     })
     def put(self, current_user, args, user_id, api_id):
@@ -183,6 +184,8 @@ class APIUserAPIUpdate(Resource):
         user_api = user_api_repo.get_by_id(api_id)
         if user_api is None:
             raise NotFound(message='UserAPI is not found')
+        if str(user_api.userId) != user_id:
+            raise BadRequest(message='api_id is not valid')
         user_api = user_api_repo.update(user_api, current_user, args)
         return {'item': to_json(user_api._data)}, 204
 
