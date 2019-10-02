@@ -8,7 +8,7 @@ from ..repositories.user import user_repo
 
 class TransactionRepository(object):
     def get_list(self, args):
-        sortable_fields = ['fromAddress', 'fromCurrency', 'toAddress', 'toCurrency', 'senderIp', 'country']
+        sortable_fields = ['fromAddress', 'fromCurrency', 'toAddress', 'toCurrency', 'senderIp', 'country', 'createdAt']
         page = Helper.get_page_from_args(args)
         size = Helper.get_size_from_args(args)
         optional = args.get('optional')
