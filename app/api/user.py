@@ -29,7 +29,7 @@ class APIUserEmailRegistration(Resource):
         args = request.args.to_dict()
         token = args.get('token')
         if token is not None:
-            user, message = user_repo.get_user_from_token(token=token)
+            user, message = user_repo.get_user_from_token_registration(token=token)
             if message:
                 verify = "false"
             else:
@@ -37,7 +37,7 @@ class APIUserEmailRegistration(Resource):
                 verify = "true"
         else:
             verify = "false"
-        return redirect("{url}/verify={verify}".format(url=current_app.config.get('LOGIN_URL'), verify=verify))
+        return redirect("{url}?verify={verify}".format(url=current_app.config.get('LOGIN_URL'), verify=verify))
 
 
 @ns.route('/<string:user_id>')
@@ -52,7 +52,8 @@ class APIUser(Resource):
             'company': {'type': 'string'},
             'contactNumber': {'type': 'string'},
             'address': {'type': 'string'},
-            'isActive': {'type': 'boolean'}
+            'isActive': {'type': 'boolean'},
+            'roleType': {'type': 'string', 'enum': ['Admin', 'User']}
         },
     })
     def put(self, current_user, args, user_id):
@@ -60,6 +61,7 @@ class APIUser(Resource):
             raise BadRequest(message=f'UserId {user_id} is not valid')
         if current_user.roleType == 'User':
             del args['isActive']
+            del args['roleType']
         user = user_repo.get_by_id(user_id)
         if user is None:
             raise NotFound(message='User is not found')

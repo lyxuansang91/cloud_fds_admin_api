@@ -6,6 +6,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'something-very-secret'
+    SERVER_NAME = os.environ.get('API_URL')
+    PREFERRED_URL_SCHEME = os.environ.get('PREFERRED_URL_SCHEME', 'http')
     MONGODB_USERNAME = os.environ.get('MONGO_USERNAME')
     MONGODB_PASSWORD = os.environ.get('MONGO_PASSWORD')
     MONGODB_HOST = os.environ.get('MONGO_HOST') or 'localhost'
@@ -18,6 +20,7 @@ class Config(object):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     LOGIN_URL = os.environ.get('LOGIN_URL') or 'http://localhost:3000/login'
+    RESET_PASSWORD_URL = os.environ.get('RESET_PASSWORD_URL') or 'http://localhost:3000/reset-password'
 
 
 class TestingConfig(Config):
