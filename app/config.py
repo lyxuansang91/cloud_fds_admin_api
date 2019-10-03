@@ -6,8 +6,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'something-very-secret'
-    SERVER_NAME = os.environ.get('API_URL')
-    PREFERRED_URL_SCHEME = os.environ.get('PREFERRED_URL_SCHEME', 'http')
+    API_URL = os.environ.get('API_URL') or 'http://localhost:5000'
     MONGODB_USERNAME = os.environ.get('MONGO_USERNAME')
     MONGODB_PASSWORD = os.environ.get('MONGO_PASSWORD')
     MONGODB_HOST = os.environ.get('MONGO_HOST') or 'localhost'

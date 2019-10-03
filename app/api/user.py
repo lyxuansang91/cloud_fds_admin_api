@@ -240,11 +240,12 @@ class APIUserRegisterAndList(Resource):
         if user is None:
             raise BadRequest(code=400, message=message)
         token = user_repo.generate_registration_token(user)
+        url = "{path}/v1/admin/users/verify?token={token}".format(path=current_app.config.get('API_URL'), token=token)
         send_email(
             subject='[TheVault] Email Registration',
             sender=current_app.config['MAIL_USERNAME'],
             recipients=[user.email],
-            html_body=render_template('email/email_verification.html', user=user, token=token))
+            html_body=render_template('email/email_verification.html', user=user, url=url))
         data = user._data
         del data['password']
         return {'item': to_json(data), 'message': 'Signup user is successful'}, 201
