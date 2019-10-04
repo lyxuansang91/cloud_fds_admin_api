@@ -44,7 +44,7 @@ class APIPasswordVerifyToken(fr.Resource):
         },
         'required': ['password'],
     })
-    def post(self, token, args):
+    def post(self, args, token):
         user, message = user_repo.get_user_from_token_reset_password(token=token)
         if message:
             raise BadRequest(message=message)
