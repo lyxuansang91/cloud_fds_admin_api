@@ -87,6 +87,8 @@ class UserRepository(object):
         user = m.User.objects(id=ObjectId(user_id)).first()
         if user is None or user.email != email:
             return None, 'Token is not valid'
+        if not user.emailVerified:
+            return None, 'Email is not verified'
         return user, None
 
     def get_user_from_token_registration(self, token):
