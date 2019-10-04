@@ -1,5 +1,5 @@
 import flask_restplus as fr
-from flask import current_app, render_template, redirect
+from flask import current_app, render_template
 
 from app.decorators import use_args
 from app.email import send_email

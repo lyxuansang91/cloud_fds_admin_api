@@ -14,6 +14,8 @@ class UserAPIRepository(object):
         size = Helper.get_size_from_args(args)
         optional = args.get('optional')
         sorts = Helper.get_sort_from_args(args, sortable_fields)
+        if sorts is None or sorts == []:
+            sorts = [['createdAt', 'desc']]
         fields = Helper.get_fields_from_args(args)
         user_id = args['user_id']
         params = {'userId': ObjectId(user_id)}
