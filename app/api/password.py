@@ -5,6 +5,7 @@ from app.decorators import use_args
 from app.email import send_email
 from app.errors.exceptions import BadRequest
 from app.repositories.user import user_repo
+from app.utils import to_json
 
 ns = fr.Namespace(name="password", description="Password reset and verification")
 
@@ -45,11 +46,9 @@ class APIPasswordVerifyToken(fr.Resource):
     })
     def post(self, token, args):
         user, message = user_repo.get_user_from_token_reset_password(token=token)
-        format_url = current_app.config.get('RESET_PASSWORD_URL') + "?reset_password="
         if message:
-            return redirect(format_url + "false")
+            raise BadRequest(message=message)
         user = user_repo.update_user(user, None, args)
         if user is None:
-            return redirect(format_url + "false")
-
-        return redirect(format_url + "true")
+            raise BadRequest(message='Reset password failed')
+        return {'item': to_json(user._data), 'message': 'Reset password is successfully'}, 200
