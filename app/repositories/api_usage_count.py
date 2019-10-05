@@ -37,5 +37,8 @@ class ApiUsageCountRepository(object):
             res.append(data)
         return res, page_items, count_items
 
+    def get_by_id(self, api_id):
+        return m.ApiUsageCount.objects(apiId=ObjectId(api_id))
+
 
 api_usage_count_repo = ApiUsageCountRepository()

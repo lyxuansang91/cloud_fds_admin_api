@@ -5,6 +5,7 @@ from flask import current_app
 
 from app import models as m
 from app.helper import Helper
+from ..repositories.api_usage_count import api_usage_count_repo
 
 
 class UserAPIRepository(object):
@@ -39,12 +40,18 @@ class UserAPIRepository(object):
             items, page_items, count_items = user_apis.items, user_apis.page, user_apis.total
 
         if fields is not None:
-            res = []
+            user_api_list = []
             for item in items:
                 data = {k: item._data[k] for k in item._data if k in fields}
-                res.append(data)
+                user_api_list.append(data)
         else:
-            res = [item._data for item in items]
+            user_api_list = [item._data for item in items]
+        # res is user_api list, so we need to query to get apiUsageCount
+        res = []
+        for user_api in user_api_list:
+            api_usages = api_usage_count_repo.get_by_id(user_api['id'])
+            temp = {**user_api, 'api_usage_count': [api_usage._data for api_usage in api_usages]}
+            res.append(temp)
         return res, page_items, count_items
 
     def create(self, data, current_user):
