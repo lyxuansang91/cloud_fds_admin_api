@@ -2,6 +2,8 @@ from bson import ObjectId
 
 from app import models as m
 from app.helper import Helper
+from app.utils import first_of_current_month, first_of_next_month
+from mongoengine.queryset.visitor import Q
 
 
 class ApiUsageCountRepository(object):
@@ -39,6 +41,9 @@ class ApiUsageCountRepository(object):
 
     def get_by_id(self, api_id):
         return m.ApiUsageCount.objects(apiId=ObjectId(api_id))
+
+    def get_count_by_current_month(self, api_id):
+        return m.ApiUsageCount.objects(Q(apiId=ObjectId(api_id)) & Q(date__lt=first_of_next_month()) & Q(date__gte=first_of_current_month()))
 
 
 api_usage_count_repo = ApiUsageCountRepository()
