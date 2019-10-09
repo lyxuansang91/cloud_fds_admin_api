@@ -53,7 +53,8 @@ class APIUser(Resource):
             'contactNumber': {'type': 'string'},
             'address': {'type': 'string'},
             'isActive': {'type': 'boolean'},
-            'roleType': {'type': 'string', 'enum': ['Admin', 'User']}
+            'roleType': {'type': 'string', 'enum': ['Admin', 'User']},
+            'billingType': {'type': 'string', 'enum': ['Free trial', 'Metered', 'Monthly']}
         },
     })
     def put(self, current_user, args, user_id):
@@ -115,7 +116,7 @@ class APITransactionList(Resource):
             'size': {'type': 'string'},
             'sort': {'type': 'string'},
             'filter': {'type': 'string'},
-            'optional': {'type': 'string'}
+            'optional': {'type': 'string'},
         }
     })
     def get(self, current_user, args, user_id):

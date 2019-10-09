@@ -1,7 +1,7 @@
 import decimal
 import enum
 import string
-from datetime import datetime
+from datetime import datetime, date
 
 from random import choice, randint
 
@@ -15,6 +15,13 @@ def _epoch_utc_to_datetime(epoch_utc):
     python datetime objects (which are easier to use with sqlalchemy).
     """
     return datetime.fromtimestamp(epoch_utc)
+
+
+def first_of_next_month():
+    today_date = date.today()
+    if today_date.month == 12:
+        return today_date.replace(year=today_date.year + 1, month=1, day=1)
+    return today_date.replace(month=today_date.month+1, day=1)
 
 
 def get_current_user():
