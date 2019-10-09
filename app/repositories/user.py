@@ -7,6 +7,8 @@ from flask import current_app
 from app import models as m
 from app.extensions import flask_bcrypt
 from app.helper import Helper
+from ..repositories.billing_type import billing_type_repo
+from ..repositories.user_change_billing_type import user_change_billing_type_repo
 
 
 class UserRepository(object):
@@ -144,6 +146,10 @@ class UserRepository(object):
         return user
 
     def update_user(self, user, current_user, args):
+        billing_type = billing_type_repo.get_by_billing_type(args.get('billingType'))
+        del args['billingType']
+        if billing_type is not None and user.billingType != billing_type.id:  # change billing type ...
+            args['billingType'] = billing_type.id  # change billing_type when billing_type is different
         args['updatedAt'] = datetime.utcnow()
         if current_user is not None:
             args['updatedBy'] = current_user.username
@@ -152,6 +158,14 @@ class UserRepository(object):
         try:
             user.update(**args)
             user.reload()
+            # check billing type is change or not
+            if 'billingType' in args:  # change billingType
+                info = {
+                    'userId': user.id,
+                    'billingType': args['billingType'],
+                    'createdBy': current_user.username,
+                    'updatedAt': datetime.utcnow()}
+                _ = user_change_billing_type_repo.insert_one(info)
             return user
         except Exception as e:
             current_app.logger.error('exception on user update:', e)
