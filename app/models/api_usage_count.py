@@ -4,25 +4,20 @@ from app.extensions import db
 
 
 class ApiUsageCount(db.Document):
+    userId = db.ObjectIdField(required=True)
     apiId = db.ObjectIdField(required=True)
-    year = db.IntField(required=True)
-    month = db.IntField(required=True)
+    date = db.DateField(required=True)
     count = db.IntField(required=True, default=0)
 
     meta = {
         'collection': 'apiUsageCount',
         'indexes': [
+            'userId',
             'apiId',
-            '-year',
-            '-month'
+            '-date',
         ]
     }
 
     @staticmethod
     def increaseCount(apiId):
-        curUtc = datetime.utcnow()
-
-        year = curUtc.year
-        month = curUtc.month
-
-        ApiUsageCount.objects(apiId=apiId, year=year, month=month).update_one(inc__count=1, upsert=True)
+        ApiUsageCount.objects(apiId=apiId, date=datetime.utcnow()).update_one(inc__count=1, upsert=True)

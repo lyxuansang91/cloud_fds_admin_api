@@ -2,6 +2,7 @@
 from flask import Blueprint
 from flask_restplus import Api
 
+from app.api.billing_type import ns as billing_type_ns
 from app.api.password import ns as password_ns
 from app.api.user import ns as user_ns
 
@@ -11,6 +12,7 @@ api = Api(bp, version=1.0, title='CloudFDS Admin API', description='CloudFDS Adm
 
 api.add_namespace(ns=user_ns)
 api.add_namespace(ns=password_ns)
+api.add_namespace(ns=billing_type_ns)
 
 
 @bp.before_app_first_request
@@ -20,3 +22,5 @@ def before_app_first_request():
         billing_type_repo.create({'billingType': 'Monthly'})
     if billing_type_repo.get_by_billing_type('Metered') is None:
         billing_type_repo.create({'billingType': 'Metered'})
+    if billing_type_repo.get_by_billing_type('Free trial') is None:
+        billing_type_repo.create({'billingType': 'Free trial'})

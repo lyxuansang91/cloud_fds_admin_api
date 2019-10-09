@@ -13,5 +13,8 @@ class BillingTypeRepository(object):
         except Exception:
             return None
 
+    def get_list(self):
+        return m.BillingType.objects()
+
 
 billing_type_repo = BillingTypeRepository()
