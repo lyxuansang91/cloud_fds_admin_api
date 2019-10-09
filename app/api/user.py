@@ -216,7 +216,7 @@ class APIUserRegisterAndList(Resource):
             'contactNumber': {
                 'type': 'string',
             },
-            'billingType': {'type': 'string', 'enum': ['Monthly', 'Metered']}
+            'billingType': {'type': 'string', 'enum': ['Monthly', 'Metered', 'Free trial']}
         },
         'required': ['email', 'password']
     })
@@ -225,9 +225,9 @@ class APIUserRegisterAndList(Resource):
         role_type = args.get('roleType', 'User')
         if role_type not in ['Admin', 'User']:
             raise BadRequest(message='Role type must be Admin or User')
-        billing_type = args.get('billingType', 'Monthly')
-        if billing_type not in ['Monthly', 'Metered']:
-            raise BadRequest(message='Billing type must be Monthly or Metered')
+        billing_type = args.get('billingType', 'Free trial')
+        if billing_type not in ['Monthly', 'Metered', 'Free trial']:
+            raise BadRequest(message='Billing type must be Monthly or Metered or Free trial')
         args['billingType'] = billing_type_repo.get_by_billing_type(billing_type).id
         args['roleType'] = role_type
         created_by = args.get('username') if current_user is None else current_user.username
