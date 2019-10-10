@@ -50,7 +50,7 @@ class UserAPIRepository(object):
         res = []
         for user_api in user_api_list:
             api_usages = api_usage_count_repo.get_count_by_current_month(user_api['id'])  # get apiUsageCount of current month
-            temp = {**user_api, 'api_usage_count': [api_usage._data for api_usage in api_usages]}
+            temp = {**user_api, 'api_usage_count': sum([int(api_usage._data['count']) for api_usage in api_usages])}
             res.append(temp)
         return res, page_items, count_items
 
