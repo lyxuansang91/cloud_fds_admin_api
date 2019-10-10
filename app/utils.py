@@ -43,6 +43,8 @@ def get_model_value(val):
         return str(val)
     if isinstance(val, datetime):
         return val.strftime('%Y-%m-%d %H:%M:%S')
+    if isinstance(val, date):
+        return val.strftime('%Y-%m-%d')
     if isinstance(val, enum.Enum):
         return val.value
     if isinstance(val, bytes):
