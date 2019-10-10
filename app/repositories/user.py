@@ -148,7 +148,7 @@ class UserRepository(object):
     def update_user(self, user, current_user, args):
         billing_type = billing_type_repo.get_by_billing_type(args.get('billingType'))
         del args['billingType']
-        if billing_type is not None and user.billingType != billing_type.id:  # change billing type ...
+        if billing_type is not None and user.billingType != billing_type.id:
             args['billingType'] = billing_type.id  # change billing_type when billing_type is different
         args['updatedAt'] = datetime.utcnow()
         if current_user is not None:
@@ -159,7 +159,7 @@ class UserRepository(object):
             user.update(**args)
             user.reload()
             # check billing type is change or not
-            if 'billingType' in args:  # change billingType
+            if 'billingType' in args:
                 info = {
                     'userId': user.id,
                     'billingType': args['billingType'],

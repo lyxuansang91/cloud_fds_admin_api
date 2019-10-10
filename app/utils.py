@@ -24,6 +24,10 @@ def first_of_next_month():
     return today_date.replace(month=today_date.month+1, day=1)
 
 
+def first_of_current_month():
+    return date.today().replace(day=1)
+
+
 def get_current_user():
     return getattr(g, 'user', None)
 
