@@ -5,6 +5,12 @@ class BillingTypeRepository(object):
     def get_by_billing_type(self, b_type):
         return m.BillingType.objects(billingType=b_type).first()
 
+    def get_by_id(self, _id):
+        try:
+            return m.BillingType.objects(id=_id).first()
+        except Exception:
+            return None
+
     def create(self, args):
         try:
             billing_type = m.BillingType(**args)
