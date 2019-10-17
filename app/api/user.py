@@ -1,21 +1,21 @@
 import os
 from uuid import uuid4
 
-from flask import current_app, render_template, request
+from flask import current_app, redirect, render_template, request
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
-                                jwt_required, jwt_optional)
+                                jwt_optional, jwt_required)
 from flask_restplus import Namespace, Resource
-from flask import redirect
 
 from app.email import send_email
 from app.errors.exceptions import BadRequest, NotFound
 from app.extensions import flask_bcrypt
+from app.repositories.api_usage_count import api_usage_count_repo
+from app.repositories.billing_type import billing_type_repo
 from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
 from app.repositories.user_access_token import user_access_token_repo
+from app.repositories.user_activity import user_activity_repo
 from app.repositories.user_api import user_api_repo
-from app.repositories.billing_type import billing_type_repo
-from app.repositories.api_usage_count import api_usage_count_repo
 
 from ..decorators import authorized, consumes, use_args
 from ..utils import to_json
@@ -58,26 +58,57 @@ class APIUser(Resource):
         },
     })
     def put(self, current_user, args, user_id):
+
         if current_user.roleType == 'User' and (str(current_user.id != user_id) or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Update User',
+                'desc': 'fail'
+            })
             raise BadRequest(message=f'UserId {user_id} is not valid')
         if current_user.roleType == 'User':
             del args['isActive']
             del args['roleType']
         user = user_repo.get_by_id(user_id)
         if user is None:
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Update User',
+                'desc': 'fail'
+            })
             raise NotFound(message='User is not found')
         user = user_repo.update_user(user, current_user, args)
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Update User',
+            'desc': 'success'
+        })
         return {'item': to_json(user._data)}, 204
 
     @jwt_required
     @authorized()
     def get(self, current_user, user_id):
         if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get User Info',
+                'desc': 'fail'
+            })
             raise BadRequest(message=f'UserId {user_id} is not valid')
         user = user_repo.get_by_id(user_id)
         if user is None:
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get User Info',
+                'desc': 'fail'
+            })
             raise NotFound(message='User is not found')
         data = {k: user._data[k] for k in user._data if k != 'password'}
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Get User Info',
+            'desc': 'success'
+        })
         return {'item': to_json(data)}, 200
 
 
@@ -97,10 +128,20 @@ class APIUsageDetail(Resource):
     })
     def get(self, current_user, args, user_id):
         if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get API Usage',
+                'desc': 'fail'
+            })
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
         items, page_items, count_items = api_usage_count_repo.get_list(args)
         res = [to_json(item) for item in items]
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Get API Usage',
+            'desc': 'success'
+        })
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 
 
@@ -121,10 +162,20 @@ class APITransactionList(Resource):
     })
     def get(self, current_user, args, user_id):
         if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get Transaction List',
+                'desc': 'fail'
+            })
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
         items, page_items, count_items = tran_repo.get_list(args)
         res = [to_json(item) for item in items]
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Get Transaction List',
+            'desc': 'success'
+        })
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 
 
@@ -152,10 +203,20 @@ class APIUserAPIListAndCreate(Resource):
         else:
             active = None
         if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get UserAPI',
+                'desc': 'fail'
+            })
             raise BadRequest(message=f'UserId {user_id} is not valid')
         args['user_id'] = user_id
         items, page_items, count_items = user_api_repo.get_list(args, active)
         res = [to_json(item) for item in items]
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Get UserAPI',
+            'desc': 'fail'
+        })
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 
     @jwt_required
@@ -171,6 +232,11 @@ class APIUserAPIListAndCreate(Resource):
         args['apiSecret'] = os.urandom(32).hex()
         args['userId'] = user_id
         user = user_api_repo.create(args, current_user)
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Create UserAPI',
+            'desc': 'success'
+        })
         return {'item': to_json(user._data), 'message': 'create UserAPI successfully'}, 200
 
 
@@ -187,13 +253,33 @@ class APIUserAPIUpdate(Resource):
     })
     def put(self, current_user, args, user_id, api_id):
         if current_user.roleType == 'User':
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Update UserAPI',
+                'desc': 'fail'
+            })
             raise BadRequest(message='RoleType is not valid')
         user_api = user_api_repo.get_by_id(api_id)
         if user_api is None:
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Update UserAPI',
+                'desc': 'fail'
+            })
             raise NotFound(message='UserAPI is not found')
         if str(user_api.userId) != user_id:
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Update UserAPI',
+                'desc': 'fail'
+            })
             raise BadRequest(message='api_id is not valid')
         user_api = user_api_repo.update(user_api, current_user, args)
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Update UserAPI',
+            'desc': 'success'
+        })
         return {'item': to_json(user_api._data)}, 204
 
 
@@ -223,6 +309,10 @@ class APIUserRegisterAndList(Resource):
     })
     def post(self, current_user, args):
         ''' register user endpoint '''
+        user_activity_repo.create_activity({
+            'activity': 'Signup',
+            'desc': f'Signup with {args}'
+        })
         role_type = args.get('roleType', 'User')
         if role_type not in ['Admin', 'User']:
             raise BadRequest(message='Role type must be Admin or User')
@@ -265,9 +355,19 @@ class APIUserRegisterAndList(Resource):
     })
     def get(self, current_user, args):
         if current_user.roleType == 'User':
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get User List',
+                'desc': 'fail'
+            })
             raise BadRequest(message='Role admin is required')
         items, page_items, count_items = user_repo.get_list(args)
         res = [to_json(item) for item in items]
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Get User List',
+            'desc': 'success'
+        })
         return {'items': res, 'page': page_items, 'count': count_items}, 200
 
 
@@ -284,6 +384,10 @@ class APIUserLogin(Resource):
     })
     def post(self, args):
         username = args.get('username')
+        user_activity_repo.create_activity({
+            'activity': 'Login',
+            'desc': f'{username} is attempting to login'
+        })
         user = user_repo.find_by_username_or_email(username)
         if user:
             if flask_bcrypt.check_password_hash(user.password, args['password']):
@@ -309,6 +413,16 @@ class APIUserLogout(Resource):
     @authorized()
     def post(self, current_user, user_id):
         if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Logout',
+                'desc': 'fail'
+            })
             raise BadRequest(message=f'UserId {user_id} is not valid')
         user_access_token_repo.remove_by_user_id(user_id=user_id)
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Logout',
+            'desc': 'success'
+        })
         return {'message': f"Logout {user_id} successfully"}, 204
