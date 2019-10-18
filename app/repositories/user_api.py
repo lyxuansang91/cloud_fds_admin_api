@@ -9,6 +9,9 @@ from ..repositories.api_usage_count import api_usage_count_repo
 
 
 class UserAPIRepository(object):
+    def get_count_by_user(self, user_id):
+        return m.UserApi.objects(userId=ObjectId(user_id)).count()
+
     def get_list(self, args, active=None):
         sortable_fields = ['createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'isActive']
         page = Helper.get_page_from_args(args)

@@ -231,6 +231,9 @@ class APIUserAPIListAndCreate(Resource):
         args['apiKey'] = uuid4().hex
         args['apiSecret'] = os.urandom(32).hex()
         args['userId'] = user_id
+        n_user_api = user_api_repo.get_count_by_user(user_id)
+        if n_user_api >= current_app.config.get('MAXIMUM_USER_API'):
+            raise BadRequest(message="UserAPI number do not exceed 3")
         user = user_api_repo.create(args, current_user)
         user_activity_repo.create_activity({
             'userId': current_user.id,

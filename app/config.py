@@ -20,6 +20,7 @@ class Config(object):
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     LOGIN_URL = os.environ.get('LOGIN_URL') or 'http://localhost:3000/login'
     RESET_PASSWORD_URL = os.environ.get('RESET_PASSWORD_URL') or 'http://localhost:3000/reset-password'
+    MAXIMUM_USER_API = 3
 
 
 class TestingConfig(Config):
