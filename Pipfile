@@ -29,6 +29,7 @@ dnspython = "*"
 flask-mongoengine = "*"
 flask-cors = "*"
 flask-mail = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3.7"
