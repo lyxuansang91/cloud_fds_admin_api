@@ -1,11 +1,13 @@
 
-from flask import Blueprint
+from flask import Blueprint, current_app, jsonify
 from flask_restplus import Api
+from werkzeug.exceptions import HTTPException
 
 from app.api.billing_type import ns as billing_type_ns
 from app.api.password import ns as password_ns
 from app.api.price import ns as price_ns
 from app.api.user import ns as user_ns
+from app.errors.exceptions import ApiException
 
 bp = Blueprint('api', __name__, url_prefix='/v1/admin')
 
@@ -26,3 +28,23 @@ def before_app_first_request():
         billing_type_repo.create({'billingType': 'Metered'})
     if billing_type_repo.get_by_billing_type('Free trial') is None:
         billing_type_repo.create({'billingType': 'Free trial'})
+
+
+@api.errorhandler(ApiException)
+def api_error_handler(error):
+    current_app.logger.error(error)
+    current_app.logger.warning(
+        f'HTTP_STATUS_CODE: {error.status_code} - {error.to_dict}')
+    return jsonify(error.to_dict), error.status_code
+
+
+@api.errorhandler(HTTPException)
+def http_error_handler(error):
+    current_app.logger.error(error)
+    return jsonify({'error': {'code': error.code, 'message': error.description}}), error.code
+
+
+@api.errorhandler(Exception)
+def unexpected_error_handler(error):
+    current_app.logger.error(error)
+    return jsonify({'error': {'code': 500, 'message': 'Internal Server Error'}}), 500

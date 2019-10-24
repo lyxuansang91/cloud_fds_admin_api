@@ -1,14 +1,14 @@
-import logging
-import sys
+import datetime
+import json
+import os
+from logging import INFO, Formatter, handlers
 
+from bson import ObjectId
 from flask import Flask
 from werkzeug.exceptions import default_exceptions
 
 from .errors.handler import api_error_handler
 from .extensions import cors, db, flask_bcrypt, jwt_manager, ma, mail
-from bson import ObjectId
-import datetime
-import json
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -35,14 +35,19 @@ def create_app(config_cls):
 
 def __config_logging(app):
     if not app.debug and not app.testing:
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(
-            logging.Formatter('%(asctime)s %(levelname)s: %(message)s '
-                              '[in %(pathname)s:%(lineno)d]'))
-        stream_handler.setLevel(logging.INFO)
-        app.logger.addHandler(stream_handler)
+        fmt = '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        formatter = Formatter(fmt=fmt)
 
-    app.logger.setLevel(logging.INFO)
+        info_log = os.path.join(app.config['LOG_FOLDER'], 'app.log')
+        info_log_handler = handlers.RotatingFileHandler(
+            filename=info_log,
+            maxBytes=1024 ** 2,
+            backupCount=10)
+        info_log_handler.setLevel(level=INFO)
+        info_log_handler.setFormatter(fmt=formatter)
+        app.logger.addHandler(info_log_handler)
+
+    app.logger.setLevel(INFO)
     app.logger.info('Start CLOUD FDS ADMIN API...')
 
 
