@@ -1,7 +1,17 @@
 import os
 import datetime
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+
+root_app = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+
+def _make_dir(dir_name):
+    """ Make folder used to store log files. """
+
+    log_dir_path = os.path.join(root_app, dir_name)
+    if not os.path.exists(log_dir_path):
+        os.mkdir(log_dir_path)
+    return log_dir_path
 
 
 class Config(object):
@@ -9,6 +19,7 @@ class Config(object):
     API_URL = os.environ.get('API_URL') or 'http://localhost:5000'
     MONGODB_USERNAME = os.environ.get('MONGO_USERNAME')
     MONGODB_PASSWORD = os.environ.get('MONGO_PASSWORD')
+    LOG_FOLDER = _make_dir('logs')
     MONGODB_HOST = os.environ.get('MONGO_HOST') or 'localhost'
     MONGODB_PORT = int(os.environ.get('MONGO_PORT')) or 27017
     MONGODB_DB = os.environ.get('MONGO_DATABASE') or 'cloudFDS'
