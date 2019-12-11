@@ -58,7 +58,6 @@ class APIUser(Resource):
         },
     })
     def put(self, current_user, args, user_id):
-
         if current_user.roleType == 'User' and (str(current_user.id != user_id) or not current_user.isActive):
             user_activity_repo.create_activity({
                 'userId': current_user.id,
@@ -316,6 +315,8 @@ class APIUserRegisterAndList(Resource):
             'activity': 'Signup',
             'desc': f'Signup with {args}'
         })
+        if current_user is not None and current_user.roleType == 'User':
+            raise BadRequest(message='Normal user could not create another user')
         role_type = args.get('roleType', 'User')
         if role_type not in ['Admin', 'User']:
             raise BadRequest(message='Role type must be Admin or User')

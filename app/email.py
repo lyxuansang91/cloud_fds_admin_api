@@ -1,16 +1,16 @@
-from app.extensions import mail
-from flask_mail import Message
-from threading import Thread
-from flask import current_app
-
-
-def send_async_email(app, msg):
-    with app.app_context():
-        mail.send(msg)
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import (Mail, From)
 
 
 def send_email(subject, sender, recipients, html_body):
-    msg = Message(subject, sender=sender, recipients=recipients)
-    msg.msgId = msg.msgId.split('@')[0] + '@short_string'
-    msg.html = html_body
-    Thread(target=send_async_email, args=(current_app._get_current_object(), msg)).start()
+
+    message = Mail(from_email=From(sender, 'noreply'), to_emails=recipients, subject=subject, html_content=html_body)
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(str(e))

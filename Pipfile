@@ -30,6 +30,7 @@ flask-mongoengine = "*"
 flask-cors = "*"
 flask-mail = "*"
 python-dateutil = "*"
+sendgrid = "*"
 
 [requires]
 python_version = "3.7"
