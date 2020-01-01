@@ -103,12 +103,67 @@ class APIUser(Resource):
             })
             raise NotFound(message='User is not found')
         data = {k: user._data[k] for k in user._data if k != 'password'}
+        user_addresses = user_repo.get_user_addresses(user_id)
+        data['userAddresses'] = user_addresses
         user_activity_repo.create_activity({
             'userId': current_user.id,
             'activity': 'Get User Info',
             'desc': 'success'
         })
         return {'item': to_json(data)}, 200
+
+
+@ns.route('/<string:user_id>/addresses')
+class APIUserAddress(Resource):
+    @jwt_required
+    @authorized()
+    def get(self, current_user, user_id):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get User Addresses',
+                'desc': 'fail'
+            })
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        user = user_repo.get_by_id(user_id)
+        if user is None:
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Get User Addresses',
+                'desc': 'fail'
+            })
+            raise NotFound(message='User is not found')
+        user_addresses = user_repo.get_user_addresses(user_id)
+        user_activity_repo.create_activity({
+            'userId': current_user.id,
+            'activity': 'Get User Addresses',
+            'desc': 'success'
+        })
+        return {'items': [to_json(user_address) for user_address in user_addresses]}, 200
+
+    @jwt_required
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'currency': {'type': 'string'},
+            'address': {'type': 'string'},
+        },
+        'required': ['currency', 'address'],
+    })
+    def post(self, current_user, args, user_id):
+        if current_user.roleType == 'User' and (str(current_user.id) != user_id or not current_user.isActive):
+            user_activity_repo.create_activity({
+                'userId': current_user.id,
+                'activity': 'Add User Address',
+                'desc': 'fail'
+            })
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        user = user_repo.get_by_id(user_id)
+        if user is None:
+            raise NotFound(message='User is not found')
+        address = user_repo.get_address(user_id, args.get('currency'), args.get('address'))
+        return {'item': to_json(address._data)}, 200
 
 
 @ns.route('/<string:user_id>/usage')
@@ -232,7 +287,7 @@ class APIUserAPIListAndCreate(Resource):
         args['userId'] = user_id
         n_user_api = user_api_repo.get_count_by_user(user_id)
         if n_user_api >= current_app.config.get('MAXIMUM_USER_API'):
-            raise BadRequest(message="UserAPI number do not exceed 3")
+            raise BadRequest(message=f"UserAPI number do not exceed {current_app.config.get('MAXIMUM_USER_API')}")
         user = user_api_repo.create(args, current_user)
         user_activity_repo.create_activity({
             'userId': current_user.id,
