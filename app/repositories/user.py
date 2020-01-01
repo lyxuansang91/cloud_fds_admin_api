@@ -176,5 +176,12 @@ class UserRepository(object):
     def get_by_email(self, email):
         return m.User.objects(email=email).first()
 
+    def get_user_addresses(self, user_id):
+        user_addresses = m.UserAddress.objects(userId=user_id)
+        return [user_address._data for user_address in user_addresses]
+
+    def get_address(self, user_id, currency, address):
+        return m.UserAddress.get_address(user_id, currency, address)
+
 
 user_repo = UserRepository()
