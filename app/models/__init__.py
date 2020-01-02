@@ -8,5 +8,8 @@ from .user_access_token import UserAccessToken  # noqa
 from .user_change_billing_type import UserChangeBillingType  # noqa
 from .price import Price  # noqa
 from .user_activity import UserActivity  # noqa
-from .seq import Seq # noqa
-from .user_address import UserAddress # noqa
+from .seq import Seq  # noqa
+from .user_address import UserAddress  # noqa
+from .block import Block  # noqa
+from .user_transaction import UserTransaction  # noqa
+from .withdrawal_request import WithdrawalRequest  # noqa

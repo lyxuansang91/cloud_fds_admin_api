@@ -31,6 +31,8 @@ flask-cors = "*"
 flask-mail = "*"
 python-dateutil = "*"
 sendgrid = "*"
+web3 = "*"
+twilio = "*"
 
 [requires]
 python_version = "3.7"

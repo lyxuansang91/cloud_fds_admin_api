@@ -5,8 +5,10 @@ from flask import current_app, redirect, render_template, request
 from flask_jwt_extended import (create_access_token, get_jwt_identity,  # noqa
                                 jwt_optional, jwt_required)
 from flask_restplus import Namespace, Resource
+from web3 import Web3
 
 from app.email import send_email
+from app.sms import send_sms
 from app.errors.exceptions import BadRequest, NotFound
 from app.extensions import flask_bcrypt
 from app.repositories.api_usage_count import api_usage_count_repo
@@ -15,10 +17,13 @@ from app.repositories.transaction import tran_repo
 from app.repositories.user import user_repo
 from app.repositories.user_access_token import user_access_token_repo
 from app.repositories.user_activity import user_activity_repo
+from app.repositories.user_address import user_address_repo
 from app.repositories.user_api import user_api_repo
+from app.repositories.user_transaction import user_transaction_repo
+from app.repositories.withdrawal_request import withdrawal_request_repo
 
 from ..decorators import authorized, consumes, use_args
-from ..utils import to_json
+from ..utils import to_json, generate_random_code
 
 ns = Namespace(name="users", description="Users related operation")
 
@@ -162,8 +167,70 @@ class APIUserAddress(Resource):
         user = user_repo.get_by_id(user_id)
         if user is None:
             raise NotFound(message='User is not found')
-        address = user_repo.get_address(user_id, args.get('currency'), args.get('address'))
+
+        address_info = Web3.toChecksumAddress(args.get('address'))
+
+        address = user_repo.get_address(user_id, args.get('currency'), address_info)
         return {'item': to_json(address._data)}, 200
+
+
+@ns.route('/<string:user_id>/withdrawal_requests')
+class APIUserWithdrawal(Resource):
+    @jwt_required
+    @authorized()
+    @use_args(**{
+        'type': 'object',
+        'properties': {
+            'currency': {'type': 'string'},
+            'from_address': {'type': 'string'},
+            'to_address': {'type': 'string'},
+            'amount': {'type': 'number'},
+        },
+        'required': ['currency', 'from_address', 'to_address', 'amount']
+    })
+    def post(self, current_user, args, user_id):
+        if str(current_user.id) != user_id or not current_user.isActive:
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        user = user_repo.get_by_id(user_id)
+        if user is None:
+            raise NotFound(message='User is not found')
+
+        currency = args.get('currency')
+        from_address = Web3.toChecksumAddress(args.get('from_address'))
+        amount = args.get('amount')
+        to_address = Web3.toChecksumAddress(args.get('to_address'))
+        user_address = user_address_repo.get_by_address(currency, from_address)
+        if user_address is None:
+            raise NotFound(message='Address is not existed')
+        average_deposit = user_transaction_repo.get_average_deposit(user_id)
+        real_amount = user_transaction_repo.get_balance_of_address(user_id, from_address)
+        if real_amount < amount:
+            raise BadRequest(message='Not enough balance')
+        if average_deposit < amount:
+            # send sms
+            active = False
+            code = generate_random_code(6)
+            if user.contactNumber is not None:
+                send_sms(user.contactNumber, "Your verification code: " + code)
+            else:
+                raise BadRequest(message='Update your contactNumber and request withdrawal')
+        else:
+            active = True
+            code = '0'
+        withdrawal_request = withdrawal_request_repo.create(user_id, from_address, to_address, currency, amount, code=code, active=active)
+        del withdrawal_request['code']
+        return {'item': to_json(withdrawal_request), 'message': 'requested withdrawal'}, 201
+
+    @jwt_required()
+    @authorized()
+    def get(self, current_user, user_id):
+        if str(current_user.id) != user_id or not current_user.isActive:
+            raise BadRequest(message=f'UserId {user_id} is not valid')
+        user = user_repo.get_by_id(user_id)
+        if user is None:
+            raise NotFound(message='User is not found')
+        withdrawal_requests = withdrawal_request_repo.withdrawal_requests_from_user(user_id)
+        return {'items': [to_json(withdrawal_request) for withdrawal_request in withdrawal_requests]}, 200
 
 
 @ns.route('/<string:user_id>/usage')
@@ -360,7 +427,7 @@ class APIUserRegisterAndList(Resource):
             'contactNumber': {
                 'type': 'string',
             },
-            'billingType': {'type': 'string', 'enum': ['Monthly', 'Metered', 'Free trial']}
+            'billingType': {'type': 'string', 'enum': ['Monthly', 'Metered', 'Free trial']},
         },
         'required': ['email', 'password']
     })
