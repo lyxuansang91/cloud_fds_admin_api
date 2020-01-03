@@ -213,15 +213,15 @@ class APIUserWithdrawal(Resource):
             if user.contactNumber is not None:
                 send_sms(user.contactNumber, "Your verification code: " + code)
             else:
-                raise BadRequest(message='Update your contactNumber and request withdrawal')
+                raise BadRequest(message='Update your contactNumber and request withdrawal again')
         else:
             active = True
             code = '0'
         withdrawal_request = withdrawal_request_repo.create(user_id, from_address, to_address, currency, amount, code=code, active=active)
         del withdrawal_request['code']
-        return {'item': to_json(withdrawal_request), 'message': 'requested withdrawal'}, 201
+        return {'item': to_json(withdrawal_request), 'message': 'Requested withdrawal successfully'}, 201
 
-    @jwt_required()
+    @jwt_required
     @authorized()
     def get(self, current_user, user_id):
         if str(current_user.id) != user_id or not current_user.isActive:
@@ -230,7 +230,7 @@ class APIUserWithdrawal(Resource):
         if user is None:
             raise NotFound(message='User is not found')
         withdrawal_requests = withdrawal_request_repo.withdrawal_requests_from_user(user_id)
-        return {'items': [to_json(withdrawal_request) for withdrawal_request in withdrawal_requests]}, 200
+        return {'items': [to_json(withdrawal_request) for withdrawal_request in withdrawal_requests], 'count': len(withdrawal_requests)}, 200
 
 
 @ns.route('/<string:user_id>/usage')

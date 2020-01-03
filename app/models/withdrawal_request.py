@@ -11,6 +11,6 @@ class WithdrawalRequest(db.Document):
     toCurrency = db.StringField(required=True, max_length=200)
     amount = db.DecimalField(required=True, precision=10, default=0)
     code = db.StringField(required=True)
-    active = db.StringField(required=True, default=True)
+    active = db.BooleanField(required=True, default=True)
     createdAt = db.DateTimeField(required=True, default=datetime.utcnow)
     updatedAt = db.DateTimeField()

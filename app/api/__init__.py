@@ -7,6 +7,7 @@ from app.api.billing_type import ns as billing_type_ns
 from app.api.password import ns as password_ns
 from app.api.price import ns as price_ns
 from app.api.user import ns as user_ns
+from app.api.withdrawal_request import ns as withdrawal_request_ns
 from app.errors.exceptions import ApiException
 
 bp = Blueprint('api', __name__, url_prefix='/v1/admin')
@@ -17,6 +18,7 @@ api.add_namespace(ns=user_ns)
 api.add_namespace(ns=password_ns)
 api.add_namespace(ns=billing_type_ns)
 api.add_namespace(ns=price_ns)
+api.add_namespace(ns=withdrawal_request_ns)
 
 
 @bp.before_app_first_request
