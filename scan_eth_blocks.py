@@ -1,5 +1,6 @@
 from datetime import datetime
 import time
+import logging
 
 from web3 import Web3  # noqa
 from web3.auto import w3  # noqa
@@ -14,6 +15,7 @@ is_running = True
 
 def init():
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
 def get_latest_block():
@@ -27,7 +29,7 @@ def process_withdrawal(block_number, block_hash, tx_hash, from_address, to_addre
     user_transaction = m.UserTransaction.objects(txHash=tx_hash, transactionType='withdrawal').first()
     if user_transaction:
         return
-    print(f'found withdrawal transaction at height: #{block_number}, address: #{from_address}, amount: #{amount}')
+    logging.info(f'found withdrawal transaction at height: #{block_number}, address: #{from_address}, amount: #{amount}')
     user_transaction = m.UserTransaction(
         userId=user_address.userId,
         fromAddress=from_address,
@@ -49,7 +51,7 @@ def process_deposit(block_number, block_hash, tx_hash, from_address, to_address,
     user_transaction = m.UserTransaction.objects(txHash=tx_hash, transactionType='deposit').first()
     if user_transaction:
         return
-    print(f'found deposit transaction at height: #{block_number}, address: #{to_address}, amount: #{amount}')
+    logging.info(f'found deposit transaction at height: #{block_number}, address: #{to_address}, amount: #{amount}')
     user_transaction = m.UserTransaction(
         userId=user_address.userId,
         fromAddress=from_address,
@@ -102,10 +104,10 @@ def main():
         while is_running:
             current_block = m.Block.get_current_block("ETH")
             latest_block = get_latest_block() - 2
-            print(f'current_block: #{current_block.height}, latest block: #{latest_block}')
+            logging.info(f'current_block: #{current_block.height}, latest block: #{latest_block}')
             current_height = current_block.height
             for index_block in range(current_height, latest_block + 1):
-                print(f'ETH: processing block #{index_block}')
+                logging.info(f'ETH: processing block #{index_block}')
                 process_block(index_block)
             time.sleep(10)
 
