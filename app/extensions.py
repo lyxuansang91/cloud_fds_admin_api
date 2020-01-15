@@ -1,6 +1,5 @@
 from flask import jsonify
 from flask_bcrypt import Bcrypt
-from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
@@ -11,7 +10,6 @@ ma = Marshmallow()
 flask_bcrypt = Bcrypt()
 jwt_manager = JWTManager()
 db = MongoEngine()
-cors = CORS()
 mail = Mail()
 
 

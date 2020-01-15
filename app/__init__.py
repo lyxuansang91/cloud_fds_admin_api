@@ -8,7 +8,8 @@ from flask import Flask
 from werkzeug.exceptions import default_exceptions
 
 from .errors.handler import api_error_handler
-from .extensions import cors, db, flask_bcrypt, jwt_manager, ma, mail
+from flask_cors import CORS
+from .extensions import db, flask_bcrypt, jwt_manager, ma, mail
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -24,6 +25,7 @@ class JSONEncoder(json.JSONEncoder):
 
 def create_app(config_cls):
     app = Flask(__name__)
+    CORS(app)
     app.config.from_object(config_cls)
     __init_app(app)
     __register_blueprint(app)
@@ -54,7 +56,6 @@ def __config_logging(app):
 def __register_blueprint(app):
     from app.api import bp as api_bp
     app.register_blueprint(api_bp)
-    cors.init_app(api_bp)
 
 
 def __init_app(app):
